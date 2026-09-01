@@ -1,0 +1,110 @@
+════════════════════════════════════════════════════════════
+  面向对象思维体检 · 阶段0
+  样本：lr580-hw
+════════════════════════════════════════════════════════════
+  文件 28 个 · 有效代码 2490 行 · 类型 29 个
+  规模档位：大型（> 500 有效行）— 阈值 x1.5
+
+  【检出概览】
+    R1 参数团         13 项   (严重 3，中等 10)
+    R2 贫血模型         0 项   (严重 0，中等 0)
+
+────────────────────────────────────────────────────────────
+  [严重] R1 · 参数团
+  (String ip, String port)  出现 7 次
+
+      Init.java:109   update_db_settings(String ip, String port, String db, String user, String psw, String cfg)
+      Link.java:33   create_database(String ip, String port, String db, String name, String psw)
+      Link.java:41   connect(String ip, String port, String db, String name, String psw, String cfg)
+      SqlIO.java:4   get_export_head(String ip, String port, String name, String psw)
+      SqlIO.java:8   exportAll(String ip, String port, String db, String name, String psw, String path)
+      SqlIO.java:17   export(String ip, String port, String db, String name, String psw, String path, String[] dt)
+      SqlIO.java:30   importAll(String ip, String port, String db, String name, String psw, String path)
+
+    ▸ 发生了什么
+      这 2 个参数在 7 个方法里永远一起出现。当几个数
+      据总是结伴而行，说明它们本来就是一个东西。
+
+    ▸ 为什么是问题
+      以后要给这组数据加一个新字段，你得同时改 7 处
+      方法签名，漏改一处就编译不过；而参数顺序写错时
+      ，编译器往往不会报错。
+
+    ▸ 试试
+      把 ip、port 封装成一个类，这 7 个方法的参数列
+      表都会缩成 1 个。
+
+    ▸ 但要注意
+      如果这几个参数只是碰巧同名同类型、业务上毫无关
+      系，那就不必封装。判断标准是：它们在概念上是不
+      是同一件事的组成部分。
+
+
+────────────────────────────────────────────────────────────
+  [严重] R1 · 参数团
+  (String ip, String port, String db)  出现 6 次
+
+      Init.java:109   update_db_settings(String ip, String port, String db, String user, String psw, String cfg)
+      Link.java:33   create_database(String ip, String port, String db, String name, String psw)
+      Link.java:41   connect(String ip, String port, String db, String name, String psw, String cfg)
+      SqlIO.java:8   exportAll(String ip, String port, String db, String name, String psw, String path)
+      SqlIO.java:17   export(String ip, String port, String db, String name, String psw, String path, String[] dt)
+      SqlIO.java:30   importAll(String ip, String port, String db, String name, String psw, String path)
+
+    ▸ 发生了什么
+      这 3 个参数在 6 个方法里永远一起出现。当几个数
+      据总是结伴而行，说明它们本来就是一个东西。
+
+    ▸ 为什么是问题
+      以后要给这组数据加一个新字段，你得同时改 6 处
+      方法签名，漏改一处就编译不过；而参数顺序写错时
+      ，编译器往往不会报错。
+
+    ▸ 试试
+      把 ip、port、db 封装成一个类，这 6 个方法的参
+      数列表都会缩成 1 个。
+
+    ▸ 但要注意
+      如果这几个参数只是碰巧同名同类型、业务上毫无关
+      系，那就不必封装。判断标准是：它们在概念上是不
+      是同一件事的组成部分。
+
+
+────────────────────────────────────────────────────────────
+  [严重] R1 · 参数团
+  (String ip, String port, String db, String name, String psw)  出现 5 次
+
+      Link.java:33   create_database(String ip, String port, String db, String name, String psw)
+      Link.java:41   connect(String ip, String port, String db, String name, String psw, String cfg)
+      SqlIO.java:8   exportAll(String ip, String port, String db, String name, String psw, String path)
+      SqlIO.java:17   export(String ip, String port, String db, String name, String psw, String path, String[] dt)
+      SqlIO.java:30   importAll(String ip, String port, String db, String name, String psw, String path)
+
+    ▸ 发生了什么
+      这 5 个参数在 5 个方法里永远一起出现。当几个数
+      据总是结伴而行，说明它们本来就是一个东西。
+
+    ▸ 为什么是问题
+      以后要给这组数据加一个新字段，你得同时改 5 处
+      方法签名，漏改一处就编译不过；而参数顺序写错时
+      ，编译器往往不会报错。
+
+    ▸ 试试
+      把 ip、port、db、name、psw 封装成一个类，这 5 
+      个方法的参数列表都会缩成 1 个。
+
+    ▸ 但要注意
+      如果这几个参数只是碰巧同名同类型、业务上毫无关
+      系，那就不必封装。判断标准是：它们在概念上是不
+      是同一件事的组成部分。
+
+
+  … 另有 10 项同类发现，未展开
+
+────────────────────────────────────────────────────────────
+  [通过] R2 贫血模型  未发现问题
+
+════════════════════════════════════════════════════════════
+  说明：R2 的「外部访问次数」为启发式近似 —— 阶段0 未接入类型解析，
+        按成员名称匹配，同名字段分属不同类时会产生误差。
+════════════════════════════════════════════════════════════

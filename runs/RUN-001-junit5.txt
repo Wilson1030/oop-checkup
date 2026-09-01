@@ -1,0 +1,234 @@
+════════════════════════════════════════════════════════════
+  面向对象思维体检 · 阶段0
+  样本：junit5
+════════════════════════════════════════════════════════════
+  文件 184 个 · 有效代码 7869 行 · 类型 235 个
+  规模档位：大型（> 500 有效行）— 阈值 x1.5
+
+  【检出概览】
+    R1 参数团         255 项   (严重 78，中等 177)
+    R2 贫血模型         3 项   (严重 0，中等 3)
+
+────────────────────────────────────────────────────────────
+  [严重] R1 · 参数团
+  (Deque<Integer> indexes, Object messageOrSupplier)  出现 28 次
+
+      AssertArrayEquals.java:184   assertArrayEquals(boolean[] expected, boolean[] actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:206   assertArrayEquals(char[] expected, char[] actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:229   assertArrayEquals(byte[] expected, byte[] actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:252   assertArrayEquals(short[] expected, short[] actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:275   assertArrayEquals(int[] expected, int[] actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:298   assertArrayEquals(long[] expected, long[] actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:321   assertArrayEquals(float[] expected, float[] actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:344   assertArrayEquals(float[] expected, float[] actual, float delta, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:368   assertArrayEquals(double[] expected, double[] actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:391   assertArrayEquals(double[] expected, double[] actual, double delta, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:415   assertArrayEquals(Object[] expected, Object[] actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:445   assertArrayElementsEqual(Object expected, Object actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:488   failExpectedArrayIsNull(Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:492   expectedArrayIsNullFailure(Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:501   failActualArrayIsNull(Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:505   actualArrayIsNullFailure(Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:514   assertArraysHaveSameLength(int expected, int actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:528   failArraysNotEqual(Object expected, Object actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertIterableEquals.java:54   assertIterableEquals(Iterable<?> expected, Iterable<?> actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertIterableEquals.java:59   assertIterableEquals(Iterable<?> expected, Iterable<?> actual, Deque<Integer> indexes, Object messageOrSupplier, Map<Pair,Status> investigatedElements)
+      AssertIterableEquals.java:93   assertIterableElementsEqual(Object expected, Object actual, Deque<Integer> indexes, Object messageOrSupplier, Map<Pair,Status> investigatedElements)
+      AssertIterableEquals.java:137   assertIterablesNotNull(Object expected, Object actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertIterableEquals.java:148   failExpectedIterableIsNull(Deque<Integer> indexes, Object messageOrSupplier)
+      AssertIterableEquals.java:152   expectedIterableIsNullFailure(Deque<Integer> indexes, Object messageOrSupplier)
+      AssertIterableEquals.java:161   failActualIterableIsNull(Deque<Integer> indexes, Object messageOrSupplier)
+      AssertIterableEquals.java:165   actualIterableIsNullFailure(Deque<Integer> indexes, Object messageOrSupplier)
+      AssertIterableEquals.java:174   assertIteratorsAreEmpty(Iterator<?> expected, Iterator<?> actual, int processed, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertIterableEquals.java:193   failIterablesNotEqual(Object expected, Object actual, Deque<Integer> indexes, Object messageOrSupplier)
+
+    ▸ 发生了什么
+      这 2 个参数在 28 个方法里永远一起出现。当几个
+      数据总是结伴而行，说明它们本来就是一个东西。
+
+    ▸ 为什么是问题
+      以后要给这组数据加一个新字段，你得同时改 28 处
+      方法签名，漏改一处就编译不过；而参数顺序写错时
+      ，编译器往往不会报错。
+
+    ▸ 试试
+      把 indexes、messageOrSupplier 封装成一个类，这
+       28 个方法的参数列表都会缩成 1 个。
+
+    ▸ 但要注意
+      如果这几个参数只是碰巧同名同类型、业务上毫无关
+      系，那就不必封装。判断标准是：它们在概念上是不
+      是同一件事的组成部分。
+
+
+────────────────────────────────────────────────────────────
+  [严重] R1 · 参数团
+  (Object expected, Object actual)  出现 20 次
+
+      AssertArrayEquals.java:445   assertArrayElementsEqual(Object expected, Object actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:528   failArraysNotEqual(Object expected, Object actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertEquals.java:178   assertEquals(Object expected, Object actual)
+      AssertEquals.java:182   assertEquals(Object expected, Object actual, String message)
+      AssertEquals.java:188   assertEquals(Object expected, Object actual, Supplier<String> messageSupplier)
+      AssertEquals.java:195   failNotEqual(Object expected, Object actual, Object messageOrSupplier)
+      AssertionFailureBuilder.java:261   formatValues(Object expected, Object actual)
+      Assertions.java:1198   assertEquals(Object expected, Object actual)
+      Assertions.java:1209   assertEquals(Object expected, Object actual, String message)
+      Assertions.java:1220   assertEquals(Object expected, Object actual, Supplier<String> messageSupplier)
+      Assertions.java:2961   assertSame(Object expected, Object actual)
+      Assertions.java:2974   assertSame(Object expected, Object actual, String message)
+      Assertions.java:2988   assertSame(Object expected, Object actual, Supplier<String> messageSupplier)
+      AssertIterableEquals.java:93   assertIterableElementsEqual(Object expected, Object actual, Deque<Integer> indexes, Object messageOrSupplier, Map<Pair,Status> investigatedElements)
+      AssertIterableEquals.java:137   assertIterablesNotNull(Object expected, Object actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertIterableEquals.java:193   failIterablesNotEqual(Object expected, Object actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertSame.java:31   assertSame(Object expected, Object actual)
+      AssertSame.java:35   assertSame(Object expected, Object actual, String message)
+      AssertSame.java:42   assertSame(Object expected, Object actual, Supplier<String> messageSupplier)
+      AssertSame.java:50   failNotSame(Object expected, Object actual, Object messageOrSupplier)
+
+    ▸ 发生了什么
+      这 2 个参数在 20 个方法里永远一起出现。当几个
+      数据总是结伴而行，说明它们本来就是一个东西。
+
+    ▸ 为什么是问题
+      以后要给这组数据加一个新字段，你得同时改 20 处
+      方法签名，漏改一处就编译不过；而参数顺序写错时
+      ，编译器往往不会报错。
+
+    ▸ 试试
+      把 expected、actual 封装成一个类，这 20 个方法
+      的参数列表都会缩成 1 个。
+
+    ▸ 但要注意
+      如果这几个参数只是碰巧同名同类型、业务上毫无关
+      系，那就不必封装。判断标准是：它们在概念上是不
+      是同一件事的组成部分。
+
+
+────────────────────────────────────────────────────────────
+  [严重] R1 · 参数团
+  (float[] expected, float[] actual)  出现 14 次
+
+      AssertArrayEquals.java:116   assertArrayEquals(float[] expected, float[] actual)
+      AssertArrayEquals.java:120   assertArrayEquals(float[] expected, float[] actual, String message)
+      AssertArrayEquals.java:124   assertArrayEquals(float[] expected, float[] actual, Supplier<String> messageSupplier)
+      AssertArrayEquals.java:129   assertArrayEquals(float[] expected, float[] actual, float delta)
+      AssertArrayEquals.java:133   assertArrayEquals(float[] expected, float[] actual, float delta, String message)
+      AssertArrayEquals.java:138   assertArrayEquals(float[] expected, float[] actual, float delta, Supplier<String> messageSupplier)
+      AssertArrayEquals.java:321   assertArrayEquals(float[] expected, float[] actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:344   assertArrayEquals(float[] expected, float[] actual, float delta, Deque<Integer> indexes, Object messageOrSupplier)
+      Assertions.java:1399   assertArrayEquals(float[] expected, float[] actual)
+      Assertions.java:1409   assertArrayEquals(float[] expected, float[] actual, String message)
+      Assertions.java:1420   assertArrayEquals(float[] expected, float[] actual, Supplier<String> messageSupplier)
+      Assertions.java:1430   assertArrayEquals(float[] expected, float[] actual, float delta)
+      Assertions.java:1440   assertArrayEquals(float[] expected, float[] actual, float delta, String message)
+      Assertions.java:1451   assertArrayEquals(float[] expected, float[] actual, float delta, Supplier<String> messageSupplier)
+
+    ▸ 发生了什么
+      这 2 个参数在 14 个方法里永远一起出现。当几个
+      数据总是结伴而行，说明它们本来就是一个东西。
+
+    ▸ 为什么是问题
+      以后要给这组数据加一个新字段，你得同时改 14 处
+      方法签名，漏改一处就编译不过；而参数顺序写错时
+      ，编译器往往不会报错。
+
+    ▸ 试试
+      把 expected、actual 封装成一个类，这 14 个方法
+      的参数列表都会缩成 1 个。
+
+    ▸ 但要注意
+      如果这几个参数只是碰巧同名同类型、业务上毫无关
+      系，那就不必封装。判断标准是：它们在概念上是不
+      是同一件事的组成部分。
+
+
+  … 另有 252 项同类发现，未展开
+
+────────────────────────────────────────────────────────────
+  [中等] R2 · 贫血模型
+  TempDir  —  3 个字段，0 个 getter/setter，0 个业务方法
+
+      TempDir.java:94   class TempDir
+
+    ▸ 发生了什么
+      TempDir 有 3 个字段，却没有任何业务方法 —— 
+      它只是一个数据容器。
+
+    ▸ 为什么是问题
+      数据在一个地方，操作数据的代码在另一个地方。Te
+      mpDir 的字段含义只有外部那些类知道；哪天你改了
+      字段，编译器不会告诉你外部哪些逻辑已经失效了。
+
+    ▸ 试试
+      找一个只用到 TempDir 自己字段的方法，把它搬进 
+      TempDir。搬完你会发现它不再需要参数了 —— 因
+      为数据就在手边。这就是「对象」的意思。
+
+    ▸ 但要注意
+      不是所有逻辑都该搬进来。涉及多个对象协作、或依
+      赖外部资源（数据库、网络、UI）的逻辑，留在 Ser
+      vice 里是对的。另外，如果 TempDir 本来就是纯粹
+      的数据传输对象，那贫血是合理的。
+
+
+────────────────────────────────────────────────────────────
+  [中等] R2 · 贫血模型
+  RepeatedTest  —  5 个字段，0 个 getter/setter，0 个业务方法
+
+      RepeatedTest.java:82   class RepeatedTest
+
+    ▸ 发生了什么
+      RepeatedTest 有 5 个字段，却没有任何业务方法 
+      —— 它只是一个数据容器。
+
+    ▸ 为什么是问题
+      数据在一个地方，操作数据的代码在另一个地方。Re
+      peatedTest 的字段含义只有外部那些类知道；哪天
+      你改了字段，编译器不会告诉你外部哪些逻辑已经失
+      效了。
+
+    ▸ 试试
+      找一个只用到 RepeatedTest 自己字段的方法，把它
+      搬进 RepeatedTest。搬完你会发现它不再需要参数
+      了 —— 因为数据就在手边。这就是「对象」的意思
+      。
+
+    ▸ 但要注意
+      不是所有逻辑都该搬进来。涉及多个对象协作、或依
+      赖外部资源（数据库、网络、UI）的逻辑，留在 Ser
+      vice 里是对的。另外，如果 RepeatedTest 本来就
+      是纯粹的数据传输对象，那贫血是合理的。
+
+
+────────────────────────────────────────────────────────────
+  [中等] R2 · 贫血模型
+  Timeout  —  12 个字段，0 个 getter/setter，0 个业务方法
+
+      Timeout.java:105   class Timeout
+
+    ▸ 发生了什么
+      Timeout 有 12 个字段，却没有任何业务方法 —— 
+      它只是一个数据容器。
+
+    ▸ 为什么是问题
+      数据在一个地方，操作数据的代码在另一个地方。Ti
+      meout 的字段含义只有外部那些类知道；哪天你改了
+      字段，编译器不会告诉你外部哪些逻辑已经失效了。
+
+    ▸ 试试
+      找一个只用到 Timeout 自己字段的方法，把它搬进 
+      Timeout。搬完你会发现它不再需要参数了 —— 因
+      为数据就在手边。这就是「对象」的意思。
+
+    ▸ 但要注意
+      不是所有逻辑都该搬进来。涉及多个对象协作、或依
+      赖外部资源（数据库、网络、UI）的逻辑，留在 Ser
+      vice 里是对的。另外，如果 Timeout 本来就是纯粹
+      的数据传输对象，那贫血是合理的。
+
+
+════════════════════════════════════════════════════════════
+  说明：R2 的「外部访问次数」为启发式近似 —— 阶段0 未接入类型解析，
+        按成员名称匹配，同名字段分属不同类时会产生误差。
+════════════════════════════════════════════════════════════
