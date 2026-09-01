@@ -1,4 +1,4 @@
-# oo-checkup
+# oop-checkup
 
 **An OO transition checklist for Java learners coming from C.**
 
@@ -30,8 +30,8 @@ Both versions compile and run. Diff them yourself — that is the whole lesson.
 Requires JDK 17+ (Maven only needed to build).
 
 ```bash
-git clone https://github.com/<your-name>/oo-checkup.git
-cd oo-checkup
+git clone https://github.com/<your-name>/oop-checkup.git
+cd oop-checkup
 mvn package
 
 ./checkup.sh examples/before            # macOS / Linux
@@ -47,12 +47,14 @@ The launcher handles console encoding for you.
 | `--include-tests` | include test directories |
 | `--summary` | one-line summary |
 | `--batch` | treat each subdirectory as a separate project |
+| `--config <file>` | LLM config (see [below](#optional-llm-explanations)) |
+| `--no-llm` | force built-in templates |
 
 <details>
 <summary>Calling <code>java</code> directly</summary>
 
 ```bash
-java -jar target/oo-checkup.jar <path> --lang en > report.txt
+java -jar target/oop-checkup.jar <path> --lang en > report.txt
 ```
 
 Writing to a file sidesteps all console-encoding issues.
@@ -61,7 +63,7 @@ Writing to a file sidesteps all console-encoding issues.
 at the dot and you get `Could not find or load main class .encoding=UTF-8`:
 
 ```powershell
-java "-Dfile.encoding=UTF-8" -jar target\oo-checkup.jar <path>
+java "-Dfile.encoding=UTF-8" -jar target\oop-checkup.jar <path>
 ```
 </details>
 
@@ -186,6 +188,79 @@ value is gone.
 
 ---
 
+## Optional: LLM explanations
+
+The tool ships with hand-written templates and **works completely without an LLM** —
+offline, free, deterministic. If you want explanations tailored to your specific
+code, plug in your own API key.
+
+### What changes, and what doesn't
+
+| | Without LLM | With LLM |
+|---|---|---|
+| Which findings, where, which standard | rule engine | **rule engine — identical** |
+| The five prose sections | templates | rewritten for your code |
+| Reproducibility | byte-identical | findings identical, wording varies |
+
+**The LLM is architecturally forbidden from touching the judgement.** It receives an
+already-decided finding and is instructed not to question it, not to add problems,
+and not to mention anything not listed. Verify it yourself:
+
+```bash
+./checkup.sh samples --batch --summary                    # templates
+./checkup.sh samples --batch --summary --config my.json   # LLM
+# identical output
+```
+
+### Setup
+
+```bash
+cp oop-checkup.example.json oop-checkup.json   # gitignored
+```
+
+```jsonc
+{
+  "enabled": true,
+  "baseUrl": "https://api.deepseek.com/v1",
+  "apiKey":  "sk-...",           // or set OOPC_API_KEY
+  "model":   "deepseek-chat",
+  "timeoutMs": 15000
+}
+```
+
+Lookup order: `--config <file>` → `./oop-checkup.json` → `~/.oop-checkup.json` →
+environment variables `OOPC_API_KEY` / `OOPC_BASE_URL` / `OOPC_MODEL`.
+
+Any **OpenAI-compatible** endpoint works:
+
+| Provider | `baseUrl` | |
+|---|---|---|
+| DeepSeek | `https://api.deepseek.com/v1` | cheap |
+| Ollama | `http://localhost:11434/v1` | **local, free, nothing leaves your machine** |
+| OpenAI | `https://api.openai.com/v1` | |
+| Qwen / Kimi / GLM | their compatible endpoints | free tiers available |
+
+Force templates at any time with `--no-llm`.
+
+### What gets sent
+
+Only the finding metadata and **the code fragments that already appear in the
+report** — class names, method signatures, field declarations, line numbers.
+Whole source files are never transmitted.
+
+Want zero data leaving your machine? Point `baseUrl` at Ollama.
+
+### Failure policy
+
+No config, timeout, HTTP error, malformed response, missing section — **every path
+falls back to templates silently**. After three consecutive failures it stops trying,
+so a dead endpoint cannot stall your report. Measured: an unreachable host costs
+1.2 seconds in total.
+
+**The report always comes out.**
+
+---
+
 ## How this tool was validated
 
 Not "it ran, ship it". Full records in [`runs/`](runs) and `PREREGISTRATION-v*.md`.
@@ -226,9 +301,7 @@ Remove any one and the defect ships.
 - [x] Six rules + checklist report
 - [x] Six validation rounds (preregistration / control group / blind test)
 - [x] Bilingual reports (`--lang zh|en`)
-- [ ] `LlmExplainer` — the interface is in place ([`explain/Explainer.java`](src/main/java/com/ooc/explain/Explainer.java)),
-      implementation pending. Bring-your-own-key, OpenAI-compatible, and the tool
-      works fully without it
+- [x] Optional LLM explanations (BYOK, OpenAI-compatible, zero added dependencies)
 - [ ] Item 7 (Primitive Obsession)
 - [ ] Web version: paste code, get the report
 - [ ] IDE plugin
@@ -242,7 +315,7 @@ src/main/java/com/ooc/
 ├── ir/          unified IR — swapping parsers never touches this
 ├── parse/       JavaParser → IR (the only parser-coupled code)
 ├── rules/       six rules, one file each
-├── explain/     Explainer interface + TemplateExplainer
+├── explain/     Explainer interface, TemplateExplainer, optional LlmExplainer
 └── report/      checklist rendering
 
 checkup.bat / .sh   launchers (encoding handled)

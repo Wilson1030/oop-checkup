@@ -1,4 +1,4 @@
-package com.ooc.parse;
+package com.oopc.parse;
 
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
@@ -15,7 +15,7 @@ import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.SwitchStmt;
-import com.ooc.ir.Ir;
+import com.oopc.ir.Ir;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

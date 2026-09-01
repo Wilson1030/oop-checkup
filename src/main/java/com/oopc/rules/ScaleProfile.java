@@ -1,6 +1,6 @@
-package com.ooc.rules;
+package com.oopc.rules;
 
-import com.ooc.report.Lang;
+import com.oopc.report.Lang;
 
 /**
  * Scale adaptation.

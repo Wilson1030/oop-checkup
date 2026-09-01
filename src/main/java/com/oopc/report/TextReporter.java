@@ -1,7 +1,7 @@
-package com.ooc.report;
+package com.oopc.report;
 
-import com.ooc.ir.Ir;
-import com.ooc.rules.ScaleProfile;
+import com.oopc.ir.Ir;
+import com.oopc.rules.ScaleProfile;
 
 import java.io.PrintStream;
 import java.util.ArrayList;

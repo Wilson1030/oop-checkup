@@ -1,7 +1,7 @@
-package com.ooc.explain;
+package com.oopc.explain;
 
-import com.ooc.report.Explanation;
-import com.ooc.report.Finding;
+import com.oopc.report.Explanation;
+import com.oopc.report.Finding;
 
 /**
  * 解释层接口。

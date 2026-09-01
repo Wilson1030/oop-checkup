@@ -1,8 +1,8 @@
-package com.ooc.explain;
+package com.oopc.explain;
 
-import com.ooc.report.Explanation;
-import com.ooc.report.Finding;
-import com.ooc.report.Lang;
+import com.oopc.report.Explanation;
+import com.oopc.report.Finding;
+import com.oopc.report.Lang;
 
 import java.util.Collections;
 import java.util.List;

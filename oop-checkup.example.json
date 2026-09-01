@@ -1,0 +1,10 @@
+{
+  "//": "Copy to oop-checkup.json and fill in. The file is gitignored.",
+  "//2": "Without this file the tool runs on built-in templates: offline, free, deterministic.",
+
+  "enabled": true,
+  "baseUrl": "https://api.deepseek.com/v1",
+  "apiKey": "sk-your-key-here",
+  "model": "deepseek-chat",
+  "timeoutMs": 15000
+}

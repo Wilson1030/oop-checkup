@@ -1,9 +1,9 @@
-package com.ooc.rules;
+package com.oopc.rules;
 
-import com.ooc.ir.Ir;
-import com.ooc.report.CheckItem;
-import com.ooc.report.Finding;
-import com.ooc.report.Lang;
+import com.oopc.ir.Ir;
+import com.oopc.report.CheckItem;
+import com.oopc.report.Finding;
+import com.oopc.report.Lang;
 
 import java.nio.file.Paths;
 import java.util.ArrayList;

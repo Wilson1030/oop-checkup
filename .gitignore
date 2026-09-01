@@ -5,3 +5,5 @@ samples/
 samples-blind/
 .idea/
 *.iml
+.github/modernize/
+oop-checkup.json

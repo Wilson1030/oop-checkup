@@ -26,13 +26,13 @@ git --version
 ## Step 1 · Build
 
 ```bash
-cd oo-checkup
+cd oop-checkup
 mvn package
 ```
 
 First run downloads JavaParser, roughly 1–2 minutes.
 
-**Expected**: `BUILD SUCCESS`, and `target/oo-checkup.jar` (~1.5 MB).
+**Expected**: `BUILD SUCCESS`, and `target/oop-checkup.jar` (~1.5 MB).
 
 `BUILD FAILURE` → see [troubleshooting ②](#-build-failure)
 
@@ -272,13 +272,13 @@ Calling `java` directly:
 
 ```powershell
 chcp 65001                                  # once per terminal window
-java -jar target\oo-checkup.jar <path>
+java -jar target\oop-checkup.jar <path>
 ```
 
 Or just write to a file — **simplest, immune to console settings**:
 
 ```powershell
-java -jar target\oo-checkup.jar <path> > report.txt
+java -jar target\oop-checkup.jar <path> > report.txt
 ```
 
 ### ④ PowerShell: `Could not find or load main class .encoding=UTF-8`
@@ -304,8 +304,8 @@ CMD does not do this; only PowerShell.
 
 ```powershell
 .\checkup.bat <path>                                              # 1. use the launcher
-java "-Dfile.encoding=UTF-8" -jar target\oo-checkup.jar <path>    # 2. quote it
-java -jar target\oo-checkup.jar <path> > report.txt               # 3. write to a file
+java "-Dfile.encoding=UTF-8" -jar target\oop-checkup.jar <path>    # 2. quote it
+java -jar target\oop-checkup.jar <path> > report.txt               # 3. write to a file
 ```
 
 ### ⑤ `Illegal char <"> at index 0`
@@ -339,6 +339,35 @@ everything in `main` is perfectly reasonable, and reporting it would only mislea
 When filing an issue please include **the triggering code and why you think it
 shouldn't fire**. A criterion has to be justifiable independently of any particular
 sample — that is the rule this project runs on.
+
+---
+
+## Optional: LLM explanations
+
+The tool works fully on built-in templates. To get explanations tailored to your
+own code, plug in an API key:
+
+```bash
+cp oop-checkup.example.json oop-checkup.json   # gitignored — fill in your key
+```
+
+Any OpenAI-compatible endpoint works (DeepSeek, OpenAI, Qwen, Kimi, GLM, or
+Ollama for a fully local setup).
+
+**The findings never change.** Verify it yourself:
+
+```bash
+./checkup.sh samples --batch --summary > a.txt
+./checkup.sh samples --batch --summary --config oop-checkup.json > b.txt
+diff a.txt b.txt        # identical
+```
+
+Only the prose is rewritten. If the endpoint is unreachable, the key is invalid,
+or the response is malformed, it falls back to templates silently and the report
+still comes out. `--no-llm` forces templates.
+
+Only finding metadata and the code fragments already shown in the report are
+sent — whole source files never are.
 
 ---
 

@@ -5,11 +5,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.ooc</groupId>
-  <artifactId>oo-checkup</artifactId>
+  <artifactId>oop-checkup</artifactId>
   <version>0.1.0</version>
   <packaging>jar</packaging>
-  <name>oo-checkup</name>
-  <description>面向对象思维体检 - 阶段0引擎</description>
+  <name>oop-checkup</name>
+  <description>OO Transition Checklist for Java learners coming from C</description>
 
   <properties>
     <maven.compiler.release>17</maven.compiler.release>
@@ -25,7 +25,7 @@
   </dependencies>
 
   <build>
-    <finalName>oo-checkup</finalName>
+    <finalName>oop-checkup</finalName>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -38,7 +38,7 @@
             <configuration>
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <mainClass>com.ooc.Main</mainClass>
+                  <mainClass>com.oopc.Main</mainClass>
                 </transformer>
               </transformers>
               <createDependencyReducedPom>false</createDependencyReducedPom>

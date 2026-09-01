@@ -1,4 +1,4 @@
-package com.ooc.report;
+package com.oopc.report;
 
 /** Output language. */
 public enum Lang {

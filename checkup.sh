@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # ============================================================
-#  oo-checkup 启动脚本（macOS / Linux / Git Bash）
+#  oop-checkup 启动脚本（macOS / Linux / Git Bash）
 #
 #  用法:  ./checkup.sh <项目路径> [选项]
 # ============================================================
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-JAR="$SCRIPT_DIR/target/oo-checkup.jar"
+JAR="$SCRIPT_DIR/target/oop-checkup.jar"
 
 if [ ! -f "$JAR" ]; then
     echo ""
@@ -22,7 +22,7 @@ fi
 if [ $# -eq 0 ]; then
     cat <<'EOF'
 
-oo-checkup - 面向对象转换检查表
+oop-checkup - 面向对象转换检查表
 
 用法:
     ./checkup.sh <项目路径> [选项]

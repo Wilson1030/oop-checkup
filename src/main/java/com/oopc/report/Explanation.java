@@ -1,4 +1,4 @@
-package com.ooc.report;
+package com.oopc.report;
 
 /**
  * 一条发现的解释文本。

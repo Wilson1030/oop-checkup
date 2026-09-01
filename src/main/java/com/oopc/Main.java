@@ -1,21 +1,23 @@
-package com.ooc;
+package com.oopc;
 
-import com.ooc.explain.Explainer;
-import com.ooc.explain.TemplateExplainer;
-import com.ooc.ir.Ir;
-import com.ooc.parse.JavaFrontend;
-import com.ooc.report.CheckItem;
-import com.ooc.report.Finding;
-import com.ooc.report.Lang;
-import com.ooc.report.TextReporter;
-import com.ooc.rules.AnemicModelRule;
-import com.ooc.rules.DataClumpRule;
-import com.ooc.rules.EncapsulationRule;
-import com.ooc.rules.MainBloatRule;
-import com.ooc.rules.PolymorphismRule;
-import com.ooc.rules.Rule;
-import com.ooc.rules.ScaleProfile;
-import com.ooc.rules.StaticAbuseRule;
+import com.oopc.explain.Explainer;
+import com.oopc.explain.LlmConfig;
+import com.oopc.explain.LlmExplainer;
+import com.oopc.explain.TemplateExplainer;
+import com.oopc.ir.Ir;
+import com.oopc.parse.JavaFrontend;
+import com.oopc.report.CheckItem;
+import com.oopc.report.Finding;
+import com.oopc.report.Lang;
+import com.oopc.report.TextReporter;
+import com.oopc.rules.AnemicModelRule;
+import com.oopc.rules.DataClumpRule;
+import com.oopc.rules.EncapsulationRule;
+import com.oopc.rules.MainBloatRule;
+import com.oopc.rules.PolymorphismRule;
+import com.oopc.rules.Rule;
+import com.oopc.rules.ScaleProfile;
+import com.oopc.rules.StaticAbuseRule;
 
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
@@ -56,6 +58,8 @@ public final class Main {
         boolean batch = has(args, "--batch");
         int detail = intArg(args, "--detail", 3);
         Lang lang = Lang.parse(strArg(args, "--lang", "zh"));
+        boolean noLlm = has(args, "--no-llm");
+        String configPath = strArg(args, "--config", null);
 
         if (!Files.exists(root)) {
             out.println(lang.pick("路径不存在: ", "Path does not exist: ")
@@ -72,9 +76,19 @@ public final class Main {
             targets.add(root);
         }
 
-        // Explanation layer: template by default.
-        // An LlmExplainer can be swapped in here without touching anything else.
-        Explainer explainer = new TemplateExplainer(lang);
+        // Explanation layer.
+        // Detection is always deterministic; only the prose may be LLM-enhanced,
+        // and any failure silently falls back to the templates.
+        Explainer templates = new TemplateExplainer(lang);
+        LlmConfig llm = noLlm ? LlmConfig.disabled() : LlmConfig.load(configPath);
+        Explainer explainer = llm.enabled
+                ? new LlmExplainer(llm, lang, templates)
+                : templates;
+
+        if (!summary) {
+            out.println(LlmExplainer.banner(llm, lang));
+            out.println();
+        }
 
         for (Path target : targets) {
             Ir.Project project = new JavaFrontend(includeTests).parse(target);
@@ -101,9 +115,9 @@ public final class Main {
     }
 
     private static void printUsage(PrintStream out) {
-        out.println("oo-checkup - OO Transition Checklist for Java");
+        out.println("oop-checkup - OO Transition Checklist for Java");
         out.println();
-        out.println("Usage: oo-checkup <path> [options]");
+        out.println("Usage: oop-checkup <path> [options]");
         out.println();
         out.println("Options:");
         out.println("  --lang zh|en       report language (default: zh)");
@@ -111,10 +125,15 @@ public final class Main {
         out.println("  --include-tests    include test directories (excluded by default)");
         out.println("  --summary          one-line summary");
         out.println("  --batch            treat each subdirectory of <path> as a project");
+        out.println("  --config <file>    LLM config file (default: ./oop-checkup.json)");
+        out.println("  --no-llm           force built-in templates even if configured");
+        out.println();
+        out.println("The LLM is entirely optional. Without it the tool is offline,");
+        out.println("free, deterministic and functionally complete.");
         out.println();
         out.println("Examples:");
-        out.println("  oo-checkup examples/before");
-        out.println("  oo-checkup examples/before --lang en --detail 20");
+        out.println("  oop-checkup examples/before");
+        out.println("  oop-checkup examples/before --lang en --detail 20");
     }
 
     private static boolean has(String[] args, String flag) {

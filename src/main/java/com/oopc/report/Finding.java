@@ -1,4 +1,4 @@
-package com.ooc.report;
+package com.oopc.report;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

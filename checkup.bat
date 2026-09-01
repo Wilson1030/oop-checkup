@@ -1,6 +1,6 @@
 @echo off
 rem ============================================================
-rem  oo-checkup launcher
+rem  oop-checkup launcher
 rem  NOTE: keep this file ASCII-only.
 rem  CMD parses .bat with the system ANSI code page (GBK on
 rem  Chinese Windows), so UTF-8 Chinese here would break parsing.
@@ -9,7 +9,7 @@ setlocal
 
 chcp 65001 >nul 2>&1
 
-set "JAR=%~dp0target\oo-checkup.jar"
+set "JAR=%~dp0target\oop-checkup.jar"
 
 if not exist "%JAR%" (
     echo.
@@ -21,7 +21,7 @@ if not exist "%JAR%" (
 
 if "%~1"=="" (
     echo.
-    echo   oo-checkup
+    echo   oop-checkup
     echo.
     echo   Usage:  checkup ^<project-path^> [options]
     echo.

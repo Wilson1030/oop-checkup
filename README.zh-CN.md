@@ -1,4 +1,4 @@
-# oo-checkup
+# oop-checkup
 
 **给从 C 转向 Java 的学习者做的「面向对象转换检查表」。**
 
@@ -28,8 +28,8 @@
 需要 JDK 17+（构建才需要 Maven）。
 
 ```bash
-git clone https://github.com/<your-name>/oo-checkup.git
-cd oo-checkup
+git clone https://github.com/<your-name>/oop-checkup.git
+cd oop-checkup
 mvn package
 ```
 
@@ -49,12 +49,14 @@ mvn package
 | `--include-tests` | 包含测试目录 |
 | `--summary` | 只输出一行摘要 |
 | `--batch` | 把路径下每个子目录各当一个项目 |
+| `--config <文件>` | LLM 配置（见[下文](#可选llm-解释)） |
+| `--no-llm` | 强制使用内置模板 |
 
 <details>
 <summary>不想用脚本，直接调 java</summary>
 
 ```bash
-java -jar target/oo-checkup.jar <路径> > 报告.txt
+java -jar target/oop-checkup.jar <路径> > 报告.txt
 ```
 
 **导出到文件最省事**——写文件时编码不受终端影响，不会乱码。
@@ -63,7 +65,7 @@ java -jar target/oo-checkup.jar <路径> > 报告.txt
 报 `找不到或无法加载主类 .encoding=UTF-8`：
 
 ```powershell
-java "-Dfile.encoding=UTF-8" -jar target\oo-checkup.jar <路径>
+java "-Dfile.encoding=UTF-8" -jar target\oop-checkup.jar <路径>
 ```
 </details>
 
@@ -179,6 +181,75 @@ java "-Dfile.encoding=UTF-8" -jar target\oo-checkup.jar <路径>
 
 ---
 
+## 可选：LLM 解释
+
+工具自带手写模板，**不接 LLM 也完全可用**——离线、免费、确定性。
+如果想要针对你自己代码的解释，接你自己的 API 即可。
+
+### 什么会变，什么不会
+
+| | 不接 LLM | 接 LLM |
+|---|---|---|
+| 报哪些、在哪、违反哪条标准 | 规则引擎 | **规则引擎 —— 完全相同** |
+| 五段解释文字 | 模板 | 针对你的代码重写 |
+| 可复现性 | 逐字节相同 | 检出相同，措辞会变 |
+
+**LLM 在架构上被禁止碰判定。**它拿到的是一条已经定下来的发现，
+并且被明确告知：不要质疑它、不要新增问题、不要提及没列出的东西。你可以自己验：
+
+```bash
+./checkup.sh samples --batch --summary                    # 模板
+./checkup.sh samples --batch --summary --config my.json   # LLM
+# 输出完全一致
+```
+
+### 配置
+
+```bash
+cp oop-checkup.example.json oop-checkup.json   # 已 gitignore
+```
+
+```jsonc
+{
+  "enabled": true,
+  "baseUrl": "https://api.deepseek.com/v1",
+  "apiKey":  "sk-...",           // 也可用环境变量 OOPC_API_KEY
+  "model":   "deepseek-chat",
+  "timeoutMs": 15000
+}
+```
+
+查找顺序：`--config <文件>` → `./oop-checkup.json` → `~/.oop-checkup.json` →
+环境变量 `OOPC_API_KEY` / `OOPC_BASE_URL` / `OOPC_MODEL`。
+
+任何 **OpenAI 兼容**的端点都能接：
+
+| 服务 | `baseUrl` | |
+|---|---|---|
+| DeepSeek | `https://api.deepseek.com/v1` | 便宜 |
+| Ollama | `http://localhost:11434/v1` | **本地、免费、数据不出本机** |
+| OpenAI | `https://api.openai.com/v1` | |
+| 通义 / Kimi / 智谱 | 各自的兼容端点 | 有免费额度 |
+
+任何时候都可以用 `--no-llm` 强制回到模板。
+
+### 会发送什么
+
+只发送发现的元信息，以及**报告里本来就已经显示的代码片段**——
+类名、方法签名、字段声明、行号。**从不传输整个源文件。**
+
+想要数据完全不出本机？把 `baseUrl` 指向 Ollama。
+
+### 失败策略
+
+未配置、超时、HTTP 错误、返回格式异常、缺少段落 —— **所有路径都静默降级为模板**。
+连续失败三次后就不再尝试，避免一个挂掉的端点拖垮整份报告。
+实测：指向一个不可达的主机，全程 1.2 秒。
+
+**报告一定出得来。**
+
+---
+
 ## 这个工具是怎么被验证的
 
 不是「跑通了就发」。完整记录在 [`runs/`](runs) 和 `PREREGISTRATION-v*.md`。
@@ -219,8 +290,7 @@ java "-Dfile.encoding=UTF-8" -jar target\oo-checkup.jar <路径>
 - [x] 六条规则 + 检查表报告
 - [x] 六轮验证（预注册 / 对照组 / 盲测）
 - [x] 双语报告（`--lang zh|en`）
-- [ ] `LlmExplainer`——接口已就位（[`explain/Explainer.java`](src/main/java/com/ooc/explain/Explainer.java)），
-      实现待补。自带 API（BYOK）、OpenAI 兼容，**不配置也不影响任何功能**
+- [x] 可选 LLM 解释（自带 API、OpenAI 兼容、零新增依赖）
 - [ ] 检查项 7（基本类型偏执）
 - [ ] Web 版：粘贴代码即出报告
 - [ ] IDE 插件
@@ -234,7 +304,7 @@ src/main/java/com/ooc/
 ├── ir/          统一中间表示 —— 换解析器不用动这里
 ├── parse/       JavaParser → IR（唯一耦合解析器的地方）
 ├── rules/       六条规则，一条一个文件
-├── explain/     Explainer 接口 + TemplateExplainer
+├── explain/     Explainer 接口、TemplateExplainer、可选的 LlmExplainer
 └── report/      检查表渲染
 
 checkup.bat / .sh   启动脚本（已处理编码）
