@@ -3,6 +3,7 @@ package com.ooc.rules;
 import com.ooc.ir.Ir;
 import com.ooc.report.CheckItem;
 import com.ooc.report.Finding;
+import com.ooc.report.Lang;
 
 import java.nio.file.Paths;
 import java.util.*;
@@ -30,7 +31,7 @@ public final class PolymorphismRule implements Rule {
     }
 
     @Override
-    public List<Finding> apply(Ir.Project project, ScaleProfile scale) {
+    public List<Finding> apply(Ir.Project project, ScaleProfile scale, Lang lang) {
         // M1（v5）：多态只能用于「你能修改的类型」。
         // 对 String / Collection / boolean[] 做 instanceof 是无法避免的 ——
         // 你没法给它们添加方法，指出这类分派没有任何可行动性。
@@ -78,13 +79,24 @@ public final class PolymorphismRule implements Rule {
             List<String> types = filteredTypes.get(e.getKey());
             Finding.Severity sev = repeated ? Finding.Severity.RED : Finding.Severity.YELLOW;
 
-            String title = isSwitch
-                    ? String.format("switch 分派 [%s]  在 %d 处重复出现",
-                                    abbreviate(String.join(",", types)), group.size())
-                    : String.format("instanceof 链 [%s]  %s",
-                                    abbreviate(String.join(",", types)),
-                                    repeated ? "在 " + group.size() + " 处重复出现"
-                                             : types.size() + " 个自定义类型分支");
+            String abbr = abbreviate(String.join(",", types));
+            String title;
+            if (isSwitch) {
+                title = lang.pick(
+                        String.format("switch 分派 [%s]  在 %d 处重复出现", abbr, group.size()),
+                        String.format("switch dispatch on [%s]  —  repeated in %d places",
+                                abbr, group.size()));
+            } else if (repeated) {
+                title = lang.pick(
+                        String.format("instanceof 链 [%s]  在 %d 处重复出现", abbr, group.size()),
+                        String.format("instanceof chain on [%s]  —  repeated in %d places",
+                                abbr, group.size()));
+            } else {
+                title = lang.pick(
+                        String.format("instanceof 链 [%s]  %d 个自定义类型分支", abbr, types.size()),
+                        String.format("instanceof chain on [%s]  —  %d project-defined type branches",
+                                abbr, types.size()));
+            }
 
             Finding f = new Finding(item(), sev, title);
             f.weight = group.size() * 10 + types.size();

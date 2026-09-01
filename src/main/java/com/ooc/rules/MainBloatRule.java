@@ -3,6 +3,7 @@ package com.ooc.rules;
 import com.ooc.ir.Ir;
 import com.ooc.report.CheckItem;
 import com.ooc.report.Finding;
+import com.ooc.report.Lang;
 
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -29,7 +30,7 @@ public final class MainBloatRule implements Rule {
     }
 
     @Override
-    public List<Finding> apply(Ir.Project project, ScaleProfile scale) {
+    public List<Finding> apply(Ir.Project project, ScaleProfile scale, Lang lang) {
         List<Finding> findings = new ArrayList<>();
 
         for (Ir.Klass k : project.classes) {
@@ -40,8 +41,9 @@ public final class MainBloatRule implements Rule {
                 Finding.Severity sev = m.bodyLines > 100
                         ? Finding.Severity.RED : Finding.Severity.YELLOW;
 
-                Finding f = new Finding(item(), sev, String.format(
-                        "%s.main()  —  %d 行", k.name, m.bodyLines));
+                Finding f = new Finding(item(), sev, lang.pick(
+                        String.format("%s.main()  —  %d 行", k.name, m.bodyLines),
+                        String.format("%s.main()  —  %d lines", k.name, m.bodyLines)));
                 f.weight = m.bodyLines;
                 f.facts.put("className", k.name);
                 f.facts.put("lines", m.bodyLines);

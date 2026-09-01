@@ -3,6 +3,7 @@ package com.ooc.rules;
 import com.ooc.ir.Ir;
 import com.ooc.report.CheckItem;
 import com.ooc.report.Finding;
+import com.ooc.report.Lang;
 
 import java.nio.file.Paths;
 import java.util.*;
@@ -57,7 +58,7 @@ public final class DataClumpRule implements Rule {
     }
 
     @Override
-    public List<Finding> apply(Ir.Project project, ScaleProfile scale) {
+    public List<Finding> apply(Ir.Project project, ScaleProfile scale, Lang lang) {
         Map<String, LinkedHashMap<String, Occ>> clumps = new LinkedHashMap<>();
 
         for (Ir.Klass k : project.classes) {
@@ -127,9 +128,11 @@ public final class DataClumpRule implements Rule {
                     .map(s -> s.substring(s.lastIndexOf(' ') + 1))
                     .collect(Collectors.toList());
 
-            Finding f = new Finding(item(), sev, String.format(
-                    "(%s)  跨 %d 个类、%d 个方法，共出现 %d 次",
-                    e.getKey(), classNames.size(), methodNames.size(), count));
+            Finding f = new Finding(item(), sev, lang.pick(
+                    String.format("(%s)  跨 %d 个类、%d 个方法，共出现 %d 次",
+                            e.getKey(), classNames.size(), methodNames.size(), count),
+                    String.format("(%s)  —  %d classes, %d methods, %d occurrences",
+                            e.getKey(), classNames.size(), methodNames.size(), count)));
             f.weight = count * 10 + classNames.size();
 
             f.facts.put("paramDecls", decls);

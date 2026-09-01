@@ -3,6 +3,7 @@ package com.ooc.rules;
 import com.ooc.ir.Ir;
 import com.ooc.report.CheckItem;
 import com.ooc.report.Finding;
+import com.ooc.report.Lang;
 
 import java.nio.file.Paths;
 import java.util.*;
@@ -41,7 +42,7 @@ public final class AnemicModelRule implements Rule {
             new HashSet<>(Arrays.asList("Entity", "Data", "Value", "Embeddable", "Table"));
 
     @Override
-    public List<Finding> apply(Ir.Project project, ScaleProfile scale) {
+    public List<Finding> apply(Ir.Project project, ScaleProfile scale, Lang lang) {
         List<Finding> findings = new ArrayList<>();
 
         for (Ir.Klass k : project.classes) {
@@ -76,9 +77,11 @@ public final class AnemicModelRule implements Rule {
 
             long accessors = k.methods.stream().filter(this::isAccessor).count();
 
-            Finding f = new Finding(item(), sev, String.format(
-                    "%s  —  %d 个字段，%d 个 getter/setter，0 个业务方法",
-                    k.name, inst.size(), accessors));
+            Finding f = new Finding(item(), sev, lang.pick(
+                    String.format("%s  —  %d 个字段，%d 个 getter/setter，0 个业务方法",
+                            k.name, inst.size(), accessors),
+                    String.format("%s  —  %d fields, %d getters/setters, 0 business methods",
+                            k.name, inst.size(), accessors)));
             f.weight = total;
 
             List<Map.Entry<String, Integer>> top = byClass.entrySet().stream()
@@ -95,7 +98,9 @@ public final class AnemicModelRule implements Rule {
 
             f.locations.add(shortFile(k.filePath) + ":" + k.line + "   class " + k.name);
             for (Map.Entry<String, Integer> e : top) {
-                f.locations.add("    " + simple(e.getKey()) + "  访问它 " + e.getValue() + " 次");
+                f.locations.add("    " + simple(e.getKey())
+                        + lang.pick("  访问它 " + e.getValue() + " 次",
+                                    "  accesses it " + e.getValue() + " times"));
             }
             findings.add(f);
         }

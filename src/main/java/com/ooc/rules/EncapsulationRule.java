@@ -3,6 +3,7 @@ package com.ooc.rules;
 import com.ooc.ir.Ir;
 import com.ooc.report.CheckItem;
 import com.ooc.report.Finding;
+import com.ooc.report.Lang;
 
 import java.nio.file.Paths;
 import java.util.*;
@@ -34,7 +35,7 @@ public final class EncapsulationRule implements Rule {
             new HashSet<>(Arrays.asList("Entity", "Data", "Value", "Embeddable", "Table"));
 
     @Override
-    public List<Finding> apply(Ir.Project project, ScaleProfile scale) {
+    public List<Finding> apply(Ir.Project project, ScaleProfile scale, Lang lang) {
         List<Finding> findings = new ArrayList<>();
 
         for (Ir.Klass k : project.classes) {
@@ -50,8 +51,9 @@ public final class EncapsulationRule implements Rule {
             Finding.Severity sev = exposed.size() >= 3
                     ? Finding.Severity.RED : Finding.Severity.YELLOW;
 
-            Finding f = new Finding(item(), sev, String.format(
-                    "%s  —  %d 个 public 可变字段", k.name, exposed.size()));
+            Finding f = new Finding(item(), sev, lang.pick(
+                    String.format("%s  —  %d 个 public 可变字段", k.name, exposed.size()),
+                    String.format("%s  —  %d public mutable field(s)", k.name, exposed.size())));
             f.weight = exposed.size();
             f.facts.put("className", k.name);
             f.facts.put("fields", exposed.stream()

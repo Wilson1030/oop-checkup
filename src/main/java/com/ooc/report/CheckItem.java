@@ -1,74 +1,92 @@
 package com.ooc.report;
 
 /**
- * 面向对象转换检查表 —— 产品的骨架。
+ * The checklist — the backbone of this tool.
  *
- * 每一项都对应一条公认标准，并注明出处。
- * 这是本工具与「评分制」的根本区别：
- *   评分制隐含存在一把普适的尺子，而那把尺子只在「具体项目该怎么设计」
- *   这一层才需要，恰恰是没有标准的一层。
- *   检查表只断言「语言语义 / 设计原则 / 坏味道清单」这三层，它们有公认标准。
+ * Every item maps to a recognised standard with a citable source.
+ * This is what separates a checklist from a score: a score implies a
+ * universal yardstick, which only exists at the "how should this project
+ * be designed" layer — precisely the layer that has no standard.
+ * The checklist only asserts things that do have standards.
  *
- * semantic = true 的检查项，其判据本质上依赖语义理解（「这组参数是不是
- * 一个概念」「这个 String 该不该有类型」），纯静态分析无法达到可用准确率。
- * 这类检查项只输出「待确认」，把判断权交还给学生 —— 教学上反而更好，
- * 因为做这个判断的过程正是我们希望他学会的思考。
+ * semantic = true means the judgement fundamentally requires understanding
+ * meaning ("are these parameters one concept?"), which static analysis
+ * cannot do reliably. Such items only emit "unconfirmed" and hand the
+ * decision back to the reader — which is pedagogically better anyway.
  */
 public enum CheckItem {
 
-    DATA_BEHAVIOR("1", "数据与行为是否结合",
-            "Anemic Domain Model",
+    DATA_BEHAVIOR("1",
+            "数据与行为是否结合", "Data and behaviour kept together",
+            "Anemic Domain Model", "Anemic Domain Model",
             "Martin Fowler, AnemicDomainModel, 2003",
             true, false),
 
-    PARAM_CLUMP("2", "是否避免散装参数传递",
-            "Data Clump / Long Parameter List",
-            "Fowler《重构》坏味道 #3 #4",
+    PARAM_CLUMP("2",
+            "是否避免散装参数传递", "Loose parameters avoided",
+            "Data Clump / Long Parameter List", "Data Clump / Long Parameter List",
+            "Fowler, Refactoring — smells #3 #4",
             true, true),
 
-    POLYMORPHISM("3", "是否用多态替代类型判断",
-            "Switch Statements",
-            "Fowler《重构》坏味道 #11",
+    POLYMORPHISM("3",
+            "是否用多态替代类型判断", "Polymorphism instead of type checks",
+            "Switch Statements", "Switch Statements",
+            "Fowler, Refactoring — smell #11",
             true, false),
 
-    STATIC_ABUSE("4", "static 是否被滥用",
-            "全局状态破坏封装",
-            "Java 教科书通识",
+    STATIC_ABUSE("4",
+            "static 是否被滥用", "static not abused",
+            "全局状态破坏封装", "Global mutable state breaks encapsulation",
+            "Standard Java teaching material",
             true, false),
 
-    ENCAPSULATION("5", "封装是否完整",
-            "public 可变字段暴露内部表示",
-            "Fowler《重构》坏味道 #5 关联",
+    ENCAPSULATION("5",
+            "封装是否完整", "Encapsulation intact",
+            "public 可变字段暴露内部表示", "public mutable fields expose internals",
+            "Fowler, Refactoring — related to smell #5",
             true, false),
 
-    MAIN_BLOAT("6", "入口方法是否过度承担",
-            "Long Method（main 特化）",
-            "Fowler《重构》坏味道 #6",
+    MAIN_BLOAT("6",
+            "入口方法是否过度承担", "Entry point not overloaded",
+            "Long Method（main 特化）", "Long Method (main-specific)",
+            "Fowler, Refactoring — smell #6",
             true, false),
 
-    PRIMITIVE_OBSESSION("7", "是否避免基本类型偏执",
-            "Primitive Obsession",
-            "Fowler《重构》坏味道 #2",
+    PRIMITIVE_OBSESSION("7",
+            "是否避免基本类型偏执", "Primitive obsession avoided",
+            "Primitive Obsession", "Primitive Obsession",
+            "Fowler, Refactoring — smell #2",
             false, true);
 
     public final String no;
-    public final String title;
-    /** 违反的标准名 */
-    public final String standard;
-    /** 文献出处 */
+    private final String titleZh;
+    private final String titleEn;
+    private final String standardZh;
+    private final String standardEn;
     public final String source;
-    /** 是否已实现 */
+    /** Whether the rule is implemented. */
     public final boolean implemented;
-    /** 判据是否本质依赖语义理解 —— 此类只输出「待确认」，不断言违反 */
+    /** Whether the judgement fundamentally needs semantic understanding. */
     public final boolean semantic;
 
-    CheckItem(String no, String title, String standard, String source,
+    CheckItem(String no, String titleZh, String titleEn,
+              String standardZh, String standardEn, String source,
               boolean implemented, boolean semantic) {
         this.no = no;
-        this.title = title;
-        this.standard = standard;
+        this.titleZh = titleZh;
+        this.titleEn = titleEn;
+        this.standardZh = standardZh;
+        this.standardEn = standardEn;
         this.source = source;
         this.implemented = implemented;
         this.semantic = semantic;
+    }
+
+    public String title(Lang lang) {
+        return lang.pick(titleZh, titleEn);
+    }
+
+    public String standard(Lang lang) {
+        return lang.pick(standardZh, standardEn);
     }
 }

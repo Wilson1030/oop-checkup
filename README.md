@@ -1,306 +1,261 @@
 # oo-checkup
 
-> 给 Java 初学者做的**面向对象思维体检**。
-> 它不改你的代码，只告诉你哪里还在用 C 的思维写 Java，以及为什么那是个问题。
+**An OO transition checklist for Java learners coming from C.**
 
-面向刚从 C 转到 Java 的人。你的代码能编译、能跑、作业能满分——
-所以**没有任何工具会告诉你「你写的还不是面向对象」**。这个工具就是来填这个反馈真空的。
+[简体中文](README.zh-CN.md)
 
----
+Your code compiles. It runs. It gets full marks. So **nothing ever tells you that
+what you wrote is not object-oriented yet** — the compiler doesn't care, the tests
+pass, and the grader only looks at output.
 
-## 一分钟看效果
-
-同一个图书管理系统，重构前后各跑一次：
-
-<table>
-<tr><th width="50%">重构前</th><th width="50%">重构后</th></tr>
-<tr><td>
-
-```
-1. 数据与行为是否结合 ...... 2 处违反
-2. 是否避免散装参数传递 .... 1 处待确认
-3. 是否用多态替代类型判断 .. 1 处违反
-4. static 是否被滥用 ....... 2 处违反
-5. 封装是否完整 ............ 1 处违反
-6. 入口方法是否过度承担 .... 1 处违反
-7. 是否避免基本类型偏执 .... 未实现
-
-违反 5 项，待确认 1 项
-```
-
-</td><td>
-
-```
-1. 数据与行为是否结合 ...... 通过
-2. 是否避免散装参数传递 .... 1 处待确认
-3. 是否用多态替代类型判断 .. 通过
-4. static 是否被滥用 ....... 通过
-5. 封装是否完整 ............ 通过
-6. 入口方法是否过度承担 .... 通过
-7. 是否避免基本类型偏执 .... 未实现
-
-违反 0 项，待确认 1 项
-```
-
-</td></tr>
-</table>
-
-两份代码都在 `examples/` 里，都能编译运行，你可以自己跑一遍验证。
+This tool fills that feedback vacuum. It doesn't rewrite your code. It tells you
+where you are still writing C in Java, and why that matters.
 
 ---
 
-## 安装与运行
+## See it in 30 seconds
 
-**要求**：JDK 17+（构建需要 Maven，只用的话不需要）
+Same library-management system, before and after refactoring:
+
+| `examples/before` | `examples/after` |
+|---|---|
+| <pre>1. Data and behaviour ...... 2 violations<br>2. Loose parameters ....... 1 unconfirmed<br>3. Polymorphism ........... 1 violation<br>4. static not abused ...... 2 violations<br>5. Encapsulation .......... 1 violation<br>6. Entry point ............ 1 violation<br><br>5 items violated</pre> | <pre>1. Data and behaviour ...... pass<br>2. Loose parameters ....... 1 unconfirmed<br>3. Polymorphism ........... pass<br>4. static not abused ...... pass<br>5. Encapsulation .......... pass<br>6. Entry point ............ pass<br><br>0 items violated</pre> |
+
+Both versions compile and run. Diff them yourself — that is the whole lesson.
+
+---
+
+## Quick start
+
+Requires JDK 17+ (Maven only needed to build).
 
 ```bash
 git clone https://github.com/<your-name>/oo-checkup.git
 cd oo-checkup
 mvn package
+
+./checkup.sh examples/before            # macOS / Linux
+.\checkup.bat examples\before           # Windows
 ```
 
-然后用启动脚本（**已处理好编码，不会乱码**）：
+The launcher handles console encoding for you.
 
-```powershell
-# Windows
-.\checkup.bat <你的项目路径>
-
-# macOS / Linux
-./checkup.sh <你的项目路径>
-```
+| Option | |
+|---|---|
+| `--lang zh\|en` | report language (default `zh`) |
+| `--detail N` | expand at most N findings per item (default 3) |
+| `--include-tests` | include test directories |
+| `--summary` | one-line summary |
+| `--batch` | treat each subdirectory as a separate project |
 
 <details>
-<summary>不想用脚本，直接调 java（点开）</summary>
+<summary>Calling <code>java</code> directly</summary>
 
 ```bash
-java -jar target/oo-checkup.jar <你的项目路径> > report.txt
+java -jar target/oo-checkup.jar <path> --lang en > report.txt
 ```
 
-想直接输出到终端而不是文件，Windows 下需要处理编码：
+Writing to a file sidesteps all console-encoding issues.
+
+⚠️ In **PowerShell**, `-Dfile.encoding=UTF-8` must be quoted, otherwise it is split
+at the dot and you get `Could not find or load main class .encoding=UTF-8`:
 
 ```powershell
-chcp 65001
-java -jar target/oo-checkup.jar <路径>
+java "-Dfile.encoding=UTF-8" -jar target\oo-checkup.jar <path>
 ```
-
-⚠️ **PowerShell 里写 `-Dfile.encoding=UTF-8` 必须加引号**，
-否则会被从 `.` 处拆成两个参数，报
-`找不到或无法加载主类 .encoding=UTF-8`：
-
-```powershell
-java "-Dfile.encoding=UTF-8" -jar target/oo-checkup.jar <路径>
-```
-
 </details>
 
-### 参数
-
-| 参数 | 作用 |
-|---|---|
-| `--detail N` | 每个检查项最多展开 N 处（默认 3） |
-| `--include-tests` | 包含测试目录（默认排除） |
-| `--summary` | 只输出一行摘要 |
-| `--batch` | 把路径下每个子目录各当一个项目跑 |
-
-### 试一下
-
-```powershell
-.\checkup.bat examples\before    # 一堆问题
-.\checkup.bat examples\after     # 全部通过
-```
-
 ---
 
-## 检查表
+## The checklist
 
-每一项都对应一条公认标准，并注明出处——**你可以质疑我，但可以去查原文**。
+Every item maps to a recognised standard **with a citable source**. You may disagree
+with the tool — but you can go read the original.
 
-| # | 检查项 | 标准 | 出处 | 状态 |
+| # | Item | Standard | Source | |
 |---|---|---|---|---|
-| 1 | 数据与行为是否结合 | Anemic Domain Model | Fowler, 2003 | ✅ |
-| 2 | 是否避免散装参数传递 | Data Clump / Long Parameter List | 《重构》#3 #4 | ⚠️ 待确认模式 |
-| 3 | 是否用多态替代类型判断 | Switch Statements | 《重构》#11 | ✅ |
-| 4 | static 是否被滥用 | 全局状态破坏封装 | Java 教科书通识 | ✅ |
-| 5 | 封装是否完整 | public 可变字段暴露内部表示 | 《重构》#5 关联 | ✅ |
-| 6 | 入口方法是否过度承担 | Long Method（main 特化） | 《重构》#6 | ✅ |
-| 7 | 是否避免基本类型偏执 | Primitive Obsession | 《重构》#2 | ⬜ 未实现 |
+| 1 | Data and behaviour kept together | Anemic Domain Model | Fowler, 2003 | ✅ |
+| 2 | Loose parameters avoided | Data Clump / Long Parameter List | Refactoring #3 #4 | ⚠️ unconfirmed |
+| 3 | Polymorphism instead of type checks | Switch Statements | Refactoring #11 | ✅ |
+| 4 | `static` not abused | Global mutable state | standard teaching material | ✅ |
+| 5 | Encapsulation intact | public mutable fields | Refactoring #5 (related) | ✅ |
+| 6 | Entry point not overloaded | Long Method (main) | Refactoring #6 | ✅ |
+| 7 | Primitive obsession avoided | Primitive Obsession | Refactoring #2 | ⬜ not implemented |
 
 ---
 
-## 一条发现长什么样
+## What a finding looks like
 
 ```
 ────────────────────────────────────────────────────────────
-  [严重] 检查项 3 · 是否用多态替代类型判断
-        违反标准：Switch Statements
-        出处：Fowler《重构》坏味道 #11
+  [MAJOR] Item 1 · Data and behaviour kept together
+        Standard violated: Anemic Domain Model
+        Source: Martin Fowler, AnemicDomainModel, 2003
 ────────────────────────────────────────────────────────────
 
-  switch 分派 [ByAuthor, ByIsbn, ByTitle]  在 2 处重复出现
+  Book  —  5 fields, 6 getters/setters, 0 business methods
 
-      SearchService.java:16   SearchService.search()
-      SearchService.java:33   SearchService.label()
+      Book.java:7   class Book
+          LibraryService  accesses it 16 times
+          Main            accesses it 4 times
+          SearchService   accesses it 3 times
 
-    ▸ 发生了什么
-      对 [ByAuthor、ByIsbn、ByTitle] 的类型分派，在 2 处重复出现。
+    > How you would have written it in C
+      This is exactly the C shape: a struct holds the data, and a set of
+      functions outside operates on it.
+      You renamed the struct to a class and moved those functions into
+      another class — but the structure never changed. Data on one side,
+      the code that manipulates it on the other.
 
-    ▸ 你在 C 里会怎么写
-      在 C 里你只能这么做：struct 里放一个 int type 字段，
-      然后 switch(type) 分派到不同的处理函数。
-      这是 C 唯一能做「同一操作、不同实现」的手段。
+      In C you had no choice; the language only gave you struct.
+      In Java you do have a choice. You just didn't take it.
 
-      Java 给了你另一个手段，但你还在用 C 的那个。
+    > Try this
+      Find one method that only touches Book's own fields and move it into Book.
+      Once you do, you will notice it no longer needs parameters — the data
+      is already right there.
 
-    ▸ 为什么是问题
-      每新增一种类型，你要同时修改这 2 处。
-      漏改一处，编译器不会报错 —— 要到运行时走到那个分支才炸。
-      这就是 Fowler 把它列为坏味道的原因：改动是分散的。
+      That is the whole meaning of the word "object": data, plus the functions
+      that operate on that data, living in the same place.
+      Not inheritance. Not polymorphism. Just this.
 
-    ▸ 试试
-      让每个类型自己实现同一个方法：
-      ...
-      新增一种类型时，你只加一个类，一处都不用改。
-      这就是多态存在的全部理由 —— 它是 C 那个 switch 分派的替代品，
-      不是什么高深概念。
-
-    ▸ 但要注意
-      如果分支逻辑很简单、而且类型确定不会再增加，保留 switch 是可以的。
-      多态的代价是逻辑分散到多个文件。
-      判断标准：这组类型未来还会不会增加？
+    > But note
+      Not every method belongs inside. Logic that coordinates several objects,
+      or depends on external resources, rightly stays in a service class.
 ```
 
-### 每条都是这个结构
+Every finding has five parts:
 
-| 段落 | 作用 |
+| | |
 |---|---|
-| 发生了什么 | 客观事实 + 精确行号，不可反驳 |
-| **你在 C 里会怎么写** | **用你已有的经验当锚点**——你不是不懂封装的定义，是不知道自己写的 Java 还是 C |
-| 为什么是问题 | 具体后果，不讲大道理 |
-| 试试 | 可立即执行的一步 |
-| **但要注意** | **防止矫枉过正**——不是所有逻辑都该往实体类里搬 |
+| **What happened** | facts and line numbers — verify it before believing it |
+| **How you would have written it in C** | ← the key section. You don't lack the definition of encapsulation; you don't realise your Java is still C |
+| **Why it matters** | concrete consequences, no lecturing |
+| **Try this** | one executable step |
+| **But note** | ← guards against overcorrection |
 
 ---
 
-## 「待确认」是什么
+## "Unconfirmed" findings
 
-有些判断**本质上需要语义理解**，静态分析做不准。这类不断言违反，只把问题交回给你：
+Some judgements **fundamentally require understanding meaning**. Static analysis
+cannot do them reliably, so the tool asks instead of asserting:
 
 ```
-  [待确认] 检查项 2 · 是否避免散装参数传递
+  [UNCONFIRMED] Item 2 · Loose parameters avoided
 
-  (String title, String author)  跨 2 个类、2 个方法
+  (String title, String author)  —  2 classes, 2 methods
 
-    ▸ 怎么判断
-      这一条需要你自己判断 —— 请回答一个问题：
+    > How to decide
+      Can you give title, author a name?
 
-          你能给 title、author 起一个名字吗？
-
-          起得出来  →  它们就该是一个类
-          起不出来  →  忽略本条，它们只是碰巧同名
+          Yes  ->  then they should be a class
+          No   ->  ignore this finding
 ```
 
-这不是逃避。**起名这个动作本身，就是在逼你判断「这几个东西是不是同一个概念」**——
-而那正是面向对象设计本身。
+This isn't a cop-out. **Coming up with the name is itself the act of deciding
+whether these things are one concept** — which is object-oriented design.
 
 ---
 
-## 设计原则
+## Design principles
 
-### 1. 不打分，给检查表
-
-打分隐含「存在一把普适的尺子」。而那把尺子只在「这个项目该怎么设计」这一层才需要，
-恰恰是**没有标准**的一层。一个 500 行的库存系统和一个 500 行的游戏，合理结构本来就不同。
-
-检查表只断言有公认标准的部分：
+**1 · A checklist, not a score.**
+A score implies a universal yardstick. That yardstick is only needed at the
+"how should this project be designed" layer — exactly the layer with no standard.
+A 500-line inventory system and a 500-line game legitimately differ.
 
 ```
-❌  你得 34 分                        需要普适标准，站不住
-✅  (ip,port) 跨 3 个类被 7 个方法传   客观事实，不需要标准
+✗  You scored 34/100                       needs a universal standard
+✓  (ip, port) crosses 3 classes,           a fact; needs none
+   passed through 7 methods
 ```
 
-### 2. 检测必须确定性
+**2 · Detection must be deterministic.**
+One false positive and the reader never trusts you again. So:
 
-误报一次，学生就再也不信你了。所以：
+- *what / where / which standard* → rule engine, pure static analysis, reproducible
+- *why / how to fix* → explanation layer, optionally LLM-enhanced
 
-- **发现什么、在哪、违反哪条标准** → 规则引擎，纯静态分析，可复现
-- **为什么、怎么改** → 解释层，可选由 LLM 增强
+**An LLM never participates in the judgement**, or it will hallucinate problems.
+Run the same code twice and the findings are byte-identical.
 
-**LLM 永远不参与判定**，否则它会幻觉出不存在的问题。
-
-### 3. 不自动改代码
-
-这是最大的陷阱。一旦代劳，学生就不动脑了，产品价值归零。
+**3 · Never auto-fix.**
+The moment the tool edits your code for you, you stop thinking, and the entire
+value is gone.
 
 ---
 
-## 这个工具是怎么被验证的
+## How this tool was validated
 
-不是「跑通了就发布」。完整过程在 `runs/` 和 `PREREGISTRATION-v*.md` 里，全部留痕：
+Not "it ran, ship it". Full records in [`runs/`](runs) and `PREREGISTRATION-v*.md`.
 
-| 轮次 | 结果 | 发现了什么 |
+| Round | | What it caught |
 |---|---|---|
-| 001 | ❌ | 把 Guava 的 69 个手写重载判成了坏味道 |
-| 002 | ❌ | **拦下一次事后调参**：某阈值卡在 64% 和 57% 之间，能让数字瞬间好看——拒绝采用 |
-| 003 | ❌ | 工具类不能按名字认（`Strings` 不叫 `StringUtils`） |
-| 004 | ⚠️ | 准确率 80.6% 通过，但分层看对照组只有 14%——被样本比例掩盖的失败 |
-| 005 | ❌ | **盲测发现样本集有偏**：前四轮没有一个控制台菜单程序，而那是学生作业最典型形态 |
-| 006 | ✅ | **97.8%**（44/45），盲测组 100% |
+| 001 | ❌ | Flagged Guava's 69 hand-written overloads as a smell |
+| 002 | ❌ | **Blocked one act of post-hoc tuning**: a threshold that fell neatly between 64% and 57% would have made the numbers look great — rejected |
+| 003 | ❌ | Utility classes can't be identified by name (`Strings` isn't `StringUtils`) |
+| 004 | ⚠️ | 80.6% "passed", but the control group alone was 14% — failure masked by sample ratio |
+| 005 | ❌ | **Blind test exposed sample bias**: not one of the first four student samples was a console-menu program, which is the most typical form of all |
+| 006 | ✅ | **97.8%** (44/45); 100% on the blind set |
 
-三个机制各自抓到了一个致命问题：
+Three mechanisms, each catching something the others missed:
 
-- **对照组**（Guava / JUnit5）——若只跑学生代码，第一轮的 13 条检出看起来完全合理
-- **预注册**（先写死预测再改代码）——拦下了我自己的事后调参
-- **盲测**（下载后不看代码直接跑）——暴露了样本集偏差
+- **Control group** (Guava / JUnit5) — run only on student code, round 001's 13 findings look perfectly reasonable
+- **Preregistration** (predictions frozen before every change) — blocked my own post-hoc tuning
+- **Blind testing** (download, don't look, run) — exposed the sample bias
 
-任何一个缺席，缺陷都会活到真实用户手上。
-
----
-
-## 现状与已知局限
-
-**六条已实现规则中五条可用，一条为待确认模式。**
-
-诚实的边界：
-
-- 检查项 2、7 是**语义类**判据，纯静态做不准，只输出待确认
-- 检查项 1 的「外部访问次数」是启发式近似（未接入类型解析，按成员名匹配）
-- 已知残留误报 1 条：Guava `Suppliers` 内部优化路径的 `instanceof`
-- 验证样本 13 个（2 个成熟开源库 + 11 个真实学生仓库），规模仍小
-- **只支持 Java**
+Remove any one and the defect ships.
 
 ---
 
-## 路线图
+## Known limits
 
-- [x] 六条规则 + 检查表报告
-- [x] 六轮验证（预注册 / 对照组 / 盲测）
-- [ ] `LlmExplainer`——接口已就位（`explain/Explainer.java`），实现待补。
-      自带 API（BYOK），OpenAI 兼容，未配置时不影响任何功能
-- [ ] 检查项 7（基本类型偏执）
-- [ ] Web 版：粘贴代码即出报告
-- [ ] IDE 插件
+- Items 2 and 7 rest on **semantic** judgement; they only report *unconfirmed*
+- Item 1's external-access count is a **name-matching approximation** (no type resolution yet)
+- Item 2 requires a clump to span **≥2 classes**. Code where one `XxxManager` does
+  everything will under-report — a measured, unfixed gap
+- One known residual false positive (Guava `Suppliers` internal fast path)
+- 13 validation samples (2 mature libraries + 11 real student repositories) — still small
+- **Java only**
 
 ---
 
-## 项目结构
+## Roadmap
+
+- [x] Six rules + checklist report
+- [x] Six validation rounds (preregistration / control group / blind test)
+- [x] Bilingual reports (`--lang zh|en`)
+- [ ] `LlmExplainer` — the interface is in place ([`explain/Explainer.java`](src/main/java/com/ooc/explain/Explainer.java)),
+      implementation pending. Bring-your-own-key, OpenAI-compatible, and the tool
+      works fully without it
+- [ ] Item 7 (Primitive Obsession)
+- [ ] Web version: paste code, get the report
+- [ ] IDE plugin
+
+---
+
+## Layout
 
 ```
 src/main/java/com/ooc/
-├── ir/          统一中间表示 —— 换解析器不用动这里
-├── parse/       JavaParser → IR（唯一耦合解析器的地方）
-├── rules/       六条检查规则，一条一个文件
-├── explain/     解释层：Explainer 接口 + TemplateExplainer
-└── report/      检查表渲染
+├── ir/          unified IR — swapping parsers never touches this
+├── parse/       JavaParser → IR (the only parser-coupled code)
+├── rules/       six rules, one file each
+├── explain/     Explainer interface + TemplateExplainer
+└── report/      checklist rendering
 
-checkup.bat      Windows 启动脚本（已处理编码）
-checkup.sh       macOS / Linux 启动脚本
-examples/        before / after 演示代码（可编译运行）
-testdata/        规则的单元测试用例
-runs/            六轮验证的原始输出与逐条核验记录
-PREREGISTRATION-v*.md   每轮改动前写死的判据与预测
+checkup.bat / .sh   launchers (encoding handled)
+examples/           before / after demo code (compiles and runs)
+testdata/           unit-test case for a rule
+runs/               raw output and item-by-item verification, six rounds
+PREREGISTRATION-v*.md   criteria and predictions frozen before each change
 ```
 
-想加一条规则：实现 `rules/Rule` 接口，在 `Main.RULES` 里注册，其余不用动。
+Adding a rule: implement `rules/Rule`, register it in `Main.RULES`. Nothing else changes.
+
+> `runs/` and `PREREGISTRATION-v*.md` are archival records kept in Chinese.
+> They document the validation process; the tool itself is fully bilingual.
 
 ---
 

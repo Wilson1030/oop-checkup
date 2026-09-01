@@ -3,6 +3,7 @@ package com.ooc.rules;
 import com.ooc.ir.Ir;
 import com.ooc.report.CheckItem;
 import com.ooc.report.Finding;
+import com.ooc.report.Lang;
 
 import java.nio.file.Paths;
 import java.util.*;
@@ -50,7 +51,7 @@ public final class StaticAbuseRule implements Rule {
     }
 
     @Override
-    public List<Finding> apply(Ir.Project project, ScaleProfile scale) {
+    public List<Finding> apply(Ir.Project project, ScaleProfile scale, Lang lang) {
         List<Finding> findings = new ArrayList<>();
 
         for (Ir.Klass k : project.classes) {
@@ -67,8 +68,11 @@ public final class StaticAbuseRule implements Rule {
                 boolean anyExposed = globals.stream().anyMatch(f -> f.isPublic);
                 Finding f = new Finding(item(),
                         anyExposed ? Finding.Severity.RED : Finding.Severity.YELLOW,
-                        String.format("%s  —  %d 个 static 非 final 字段（全局变量）",
-                                k.name, globals.size()));
+                        lang.pick(
+                            String.format("%s  —  %d 个 static 非 final 字段（全局变量）",
+                                    k.name, globals.size()),
+                            String.format("%s  —  %d static non-final field(s) (global variables)",
+                                    k.name, globals.size())));
                 f.weight = globals.size() * 10 + (anyExposed ? 5 : 0);
                 f.facts.put("kind", "global-field");
                 f.facts.put("className", k.name);

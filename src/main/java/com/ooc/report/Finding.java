@@ -6,24 +6,31 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 一条检测发现。
+ * A single finding.
  *
- * 「是什么 / 在哪 / 违反哪条标准 / 事实」由规则引擎确定性产出，
- * LLM 永远不得增删或改写这部分 —— 否则会幻觉出不存在的问题，信任立刻崩塌。
- * 只有 explanation 字段可以被 LLM 增强。
+ * "What / where / which standard / the facts" are produced deterministically
+ * by the rule engine. An LLM must never add, remove or rewrite any of it —
+ * otherwise it will hallucinate problems that do not exist and trust
+ * collapses immediately. Only {@link #explanation} may be LLM-enhanced.
  */
 public final class Finding {
 
     public enum Severity {
-        RED("严重"),
-        YELLOW("中等"),
-        /** 语义类判据的输出：不断言违反，交由学生自己判断 */
-        UNCONFIRMED("待确认");
+        RED("严重", "MAJOR"),
+        YELLOW("中等", "MINOR"),
+        /** Output of a semantic judgement: not asserted, handed back to the reader. */
+        UNCONFIRMED("待确认", "UNCONFIRMED");
 
-        public final String label;
+        private final String zh;
+        private final String en;
 
-        Severity(String label) {
-            this.label = label;
+        Severity(String zh, String en) {
+            this.zh = zh;
+            this.en = en;
+        }
+
+        public String label(Lang lang) {
+            return lang.pick(zh, en);
         }
 
         public boolean isViolation() {
@@ -33,16 +40,16 @@ public final class Finding {
 
     public final CheckItem item;
     public final Severity severity;
-    /** 一行摘要（客观事实） */
+    /** One-line factual summary. */
     public final String title;
-    /** 代码位置清单 */
+    /** Source locations. */
     public final List<String> locations = new ArrayList<>();
-    /** 结构化事实，供 Explainer 填槽使用 */
+    /** Structured facts, consumed by the Explainer. */
     public final Map<String, Object> facts = new LinkedHashMap<>();
-    /** 排序权重 */
+    /** Sort weight. */
     public int weight;
 
-    /** 由 Explainer 填充，规则引擎不写这里 */
+    /** Filled in by the Explainer; rule engine never writes here. */
     public Explanation explanation;
 
     public Finding(CheckItem item, Severity severity, String title) {

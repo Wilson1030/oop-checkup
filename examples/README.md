@@ -1,29 +1,31 @@
-# 演示代码
+# Demo code
 
-`before/` 与 `after/` 是同一个图书管理系统的两个版本，用于展示工具的输出效果。
+`before/` and `after/` are two versions of the same library-management system,
+used to demonstrate the tool's output.
 
-| | 说明 |
+| | |
 |---|---|
-| `before/` | 刻意写成「用 Java 写 C」的形态：全局 static、贫血实体类、public 裸字段、switch 类型分派、逻辑全在 main |
-| `after/` | 同样的功能，按面向对象重构后的版本 |
+| `before/` | Deliberately written as "C in Java": global `static` state, anemic entity classes, `public` bare fields, `switch`-based type dispatch, all logic in `main` |
+| `after/` | Same functionality, refactored along object-oriented lines |
 
-两份都能编译运行：
+Both compile and run:
 
 ```bash
 javac -encoding UTF-8 -d out before/library/*.java
 javac -encoding UTF-8 -d out after/library/*.java
 ```
 
-跑一下对比：
+Compare them:
 
 ```bash
-java -jar ../target/oo-checkup.jar before
-java -jar ../target/oo-checkup.jar after
+../checkup.sh before
+../checkup.sh after
 ```
 
-## ⚠️ 这些不是验证样本
+## ⚠️ These are not validation samples
 
-本目录的代码是**为了展示效果而写的演示代码**。
+The code in this directory exists **to demonstrate output**.
 
-工具的准确率验证**只使用第三方代码**（2 个成熟开源库 + 11 个真实学生仓库），
-详见 `../runs/`。用自己写的样本去验证自己写的工具是循环论证，那个界限不能破。
+Accuracy validation uses **third-party code only** — 2 mature open-source libraries
+and 11 real student repositories (see `../runs/`). Validating a tool against samples
+written by its own author is circular reasoning, and that line is not crossed here.
