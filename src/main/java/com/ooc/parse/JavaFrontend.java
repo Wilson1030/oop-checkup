@@ -246,7 +246,7 @@ public final class JavaFrontend {
             if (branches >= 2) {
                 project.typeChecks.add(new Ir.TypeCheck(
                         Ir.TypeCheck.Kind.SWITCH,
-                        String.join(",", labels), new ArrayList<>(), branches,
+                        String.join(",", labels), new ArrayList<>(labels), branches,
                         line(sw.getBegin()), methodName,
                         k.qualifiedName, k.name, file));
             }

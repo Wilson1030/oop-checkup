@@ -51,6 +51,11 @@ public final class PolymorphismRule implements Rule {
                 if (kept.size() < 2) continue;
                 sig = String.join(",", kept);
             } else {
+                // N1（v6）：switch 仅在标签为具名标识符时检测。
+                // 一个「类型」必须有名字才能表达概念：case ById: 值得建一个类；
+                // case "1": 里的 "1" 不代表任何领域概念 —— 它是序号（菜单项、索引）。
+                // 对没有名字的数字做多态改造是不可能的，因为造不出对应的类。
+                if (tc.rawTypes.stream().allMatch(this::isNumericLabel)) continue;
                 kept = Collections.emptyList();
                 sig = tc.signature;
             }
@@ -103,6 +108,17 @@ public final class PolymorphismRule implements Rule {
     private String baseName(String type) {
         int i = type.indexOf('<');
         return i < 0 ? type : type.substring(0, i);
+    }
+
+    /** case 标签是否为纯数字字面量或纯数字字符串 */
+    private boolean isNumericLabel(String label) {
+        String s = label.trim();
+        if (s.length() >= 2
+                && ((s.startsWith("\"") && s.endsWith("\""))
+                 || (s.startsWith("'") && s.endsWith("'")))) {
+            s = s.substring(1, s.length() - 1);
+        }
+        return s.matches("-?\\d+");
     }
 
     private String abbreviate(String sig) {

@@ -12,24 +12,16 @@ import java.util.stream.Collectors;
  * 检查项 4 · static 是否被滥用
  * 标准：全局状态破坏封装（Java 教科书通识）
  *
- * 判据（PREREGISTRATION-v4.md）：
+ * 判据（PREREGISTRATION-v6.md）：
  *   A  存在 static 非 final 字段 —— 即全局变量
- *   B  类有 >= 1 个实例字段，且 static 方法占比 > 50%，且 static 方法 >= 5
- *   排除  工具类 = 无实例字段 且 无实例方法
  *   排除  private static 且类型为自身类型的字段（单例惯例）
  *
- * 为什么工具类按「结构」而不是「名字」判定（v4 修正）：
- *   一个类若既无实例字段、也无实例方法，它从设计上就不打算成为对象，
- *   而是一个函数集合（命名空间）。java.lang.Math 不叫 MathUtils，
- *   但没有人会说它「滥用 static」。名字不是工具类的本质特征。
- *   RUN-003 中 Guava 的 Ascii/Strings/Preconditions、JUnit5 的 Assertions
- *   共 28 项误报，全部源于按名字判定。
- *
- * 为什么判据 B 要求「有实例字段」（v4 修正）：
- *   它真正要捕捉的是自相矛盾的设计 —— 类声明了实例字段
- *   （说明它想成为一个对象），却几乎不用实例方法去操作它们。
- *   若类完全没有实例字段，那它要么是工具类（合理），
- *   要么是「用 static 字段模拟全局对象」—— 后者已由判据 A 捕捉。
+ * N2（v6）：已移除判据 B（static 方法密度）。
+ * 依据是纯粹的经验证据，无需论证：
+ *   RUN-003  guava 12 条、junit5 16 条（工具类）      全部误报
+ *   RUN-004  junit5 DynamicTest（静态工厂）            误报
+ *   RUN-005  book-console BookQuery/BorrowRecordQuery（DAO） 误报
+ * 三轮共 30 条检出，0 条正确。本检查项的全部真阳性均来自判据 A。
  *
  * 正当性：static 非 final 字段在语义上等同于 C 的全局变量。
  */
@@ -90,44 +82,10 @@ public final class StaticAbuseRule implements Rule {
                 }
                 findings.add(f);
             }
-
-            // ---- 判据 B：实例字段与 static 方法共存的矛盾设计 ----
-            if (k.instanceFields().isEmpty()) continue;   // v4：无实例字段则不适用
-            // M3（v5）：静态工厂方法是公认模式（Effective Java 第 1 条），不属 static 滥用
-            List<Ir.Method> methods = k.methods.stream()
-                    .filter(m -> !m.isConstructor)
-                    .filter(m -> !isStaticFactory(m, k))
-                    .collect(Collectors.toList());
-            long staticCount = methods.stream().filter(m -> m.isStatic).count();
-            if (staticCount >= 5 && methods.size() > 0
-                    && staticCount * 2 > methods.size()) {
-                int pct = (int) (staticCount * 100 / methods.size());
-                Finding f = new Finding(item(), Finding.Severity.YELLOW,
-                        String.format("%s  —  %d 个实例字段，但 %d 个方法中 %d 个是 static（%d%%）",
-                                k.name, k.instanceFields().size(), methods.size(), staticCount, pct));
-                f.weight = pct;
-                f.facts.put("kind", "static-density");
-                f.facts.put("className", k.name);
-                f.facts.put("staticCount", (int) staticCount);
-                f.facts.put("totalCount", methods.size());
-                f.facts.put("percent", pct);
-                f.facts.put("instanceFieldCount", k.instanceFields().size());
-                f.locations.add(shortFile(k.filePath) + ":" + k.line + "   class " + k.name);
-                findings.add(f);
-            }
         }
 
         findings.sort((a, b) -> b.weight - a.weight);
         return findings;
-    }
-
-    /**
-     * 静态工厂方法：static 且返回类型中含本类名。
-     * 覆盖 {@code Foo create()} 与 {@code Stream<Foo> stream()} 两种形态。
-     */
-    private boolean isStaticFactory(Ir.Method m, Ir.Klass k) {
-        if (!m.isStatic) return false;
-        return m.returnType.matches(".*\\b" + java.util.regex.Pattern.quote(k.name) + "\\b.*");
     }
 
     /** 单例惯例：private static 且类型就是自身 */
