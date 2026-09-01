@@ -93,8 +93,10 @@ public final class StaticAbuseRule implements Rule {
 
             // ---- 判据 B：实例字段与 static 方法共存的矛盾设计 ----
             if (k.instanceFields().isEmpty()) continue;   // v4：无实例字段则不适用
+            // M3（v5）：静态工厂方法是公认模式（Effective Java 第 1 条），不属 static 滥用
             List<Ir.Method> methods = k.methods.stream()
                     .filter(m -> !m.isConstructor)
+                    .filter(m -> !isStaticFactory(m, k))
                     .collect(Collectors.toList());
             long staticCount = methods.stream().filter(m -> m.isStatic).count();
             if (staticCount >= 5 && methods.size() > 0
@@ -117,6 +119,15 @@ public final class StaticAbuseRule implements Rule {
 
         findings.sort((a, b) -> b.weight - a.weight);
         return findings;
+    }
+
+    /**
+     * 静态工厂方法：static 且返回类型中含本类名。
+     * 覆盖 {@code Foo create()} 与 {@code Stream<Foo> stream()} 两种形态。
+     */
+    private boolean isStaticFactory(Ir.Method m, Ir.Klass k) {
+        if (!m.isStatic) return false;
+        return m.returnType.matches(".*\\b" + java.util.regex.Pattern.quote(k.name) + "\\b.*");
     }
 
     /** 单例惯例：private static 且类型就是自身 */

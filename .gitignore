@@ -2,5 +2,6 @@ target/
 out/
 *.class
 samples/
+samples-blind/
 .idea/
 *.iml

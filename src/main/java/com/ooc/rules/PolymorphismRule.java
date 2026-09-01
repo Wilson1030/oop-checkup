@@ -31,9 +31,33 @@ public final class PolymorphismRule implements Rule {
 
     @Override
     public List<Finding> apply(Ir.Project project, ScaleProfile scale) {
+        // M1（v5）：多态只能用于「你能修改的类型」。
+        // 对 String / Collection / boolean[] 做 instanceof 是无法避免的 ——
+        // 你没法给它们添加方法，指出这类分派没有任何可行动性。
+        Set<String> projectTypes = project.classes.stream()
+                .map(k -> k.name).collect(Collectors.toSet());
+
         Map<String, List<Ir.TypeCheck>> bySignature = new LinkedHashMap<>();
+        Map<String, List<String>> filteredTypes = new LinkedHashMap<>();
+
         for (Ir.TypeCheck tc : project.typeChecks) {
-            bySignature.computeIfAbsent(tc.kind + "|" + tc.signature, x -> new ArrayList<>()).add(tc);
+            String sig;
+            List<String> kept;
+            if (tc.kind == Ir.TypeCheck.Kind.INSTANCEOF_CHAIN) {
+                kept = tc.rawTypes.stream()
+                        .filter(t -> !t.contains("["))                 // 排除数组类型
+                        .filter(t -> projectTypes.contains(baseName(t))) // 仅保留项目自定义类型
+                        .collect(Collectors.toList());
+                if (kept.size() < 2) continue;
+                sig = String.join(",", kept);
+            } else {
+                kept = Collections.emptyList();
+                sig = tc.signature;
+            }
+            String key = tc.kind + "|" + sig;
+            bySignature.computeIfAbsent(key, x -> new ArrayList<>()).add(tc);
+            filteredTypes.putIfAbsent(key, kept.isEmpty()
+                    ? Arrays.asList(sig.split(",")) : kept);
         }
 
         List<Finding> findings = new ArrayList<>();
@@ -46,23 +70,23 @@ public final class PolymorphismRule implements Rule {
             // switch 单处不报：可能是菜单或状态机，属合理用法
             if (isSwitch && !repeated) continue;
 
+            List<String> types = filteredTypes.get(e.getKey());
             Finding.Severity sev = repeated ? Finding.Severity.RED : Finding.Severity.YELLOW;
 
-            List<String> types = Arrays.asList(first.signature.split(","));
             String title = isSwitch
                     ? String.format("switch 分派 [%s]  在 %d 处重复出现",
-                                    abbreviate(first.signature), group.size())
+                                    abbreviate(String.join(",", types)), group.size())
                     : String.format("instanceof 链 [%s]  %s",
-                                    abbreviate(first.signature),
+                                    abbreviate(String.join(",", types)),
                                     repeated ? "在 " + group.size() + " 处重复出现"
-                                             : first.branches + " 个类型分支");
+                                             : types.size() + " 个自定义类型分支");
 
             Finding f = new Finding(item(), sev, title);
-            f.weight = group.size() * 10 + first.branches;
+            f.weight = group.size() * 10 + types.size();
             f.facts.put("kind", isSwitch ? "switch" : "instanceof");
             f.facts.put("types", types);
             f.facts.put("repeatCount", group.size());
-            f.facts.put("branches", first.branches);
+            f.facts.put("branches", types.size());
 
             for (Ir.TypeCheck tc : group) {
                 f.locations.add(String.format("%s:%d   %s.%s()",
@@ -73,6 +97,12 @@ public final class PolymorphismRule implements Rule {
 
         findings.sort((a, b) -> b.weight - a.weight);
         return findings;
+    }
+
+    /** 去掉泛型参数，取基础类型名 */
+    private String baseName(String type) {
+        int i = type.indexOf('<');
+        return i < 0 ? type : type.substring(0, i);
     }
 
     private String abbreviate(String sig) {

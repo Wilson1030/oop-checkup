@@ -159,6 +159,8 @@ public final class Ir {
 
         public final Kind kind;
         public final String signature;
+        /** instanceof 链中出现的原始类型名（switch 为空），供规则层过滤 */
+        public final List<String> rawTypes;
         public final int branches;
         public final int line;
         public final String method;
@@ -166,10 +168,12 @@ public final class Ir {
         public final String klassSimple;
         public final String file;
 
-        public TypeCheck(Kind kind, String signature, int branches, int line,
+        public TypeCheck(Kind kind, String signature, List<String> rawTypes,
+                         int branches, int line,
                          String method, String klass, String klassSimple, String file) {
             this.kind = kind;
             this.signature = signature;
+            this.rawTypes = rawTypes;
             this.branches = branches;
             this.line = line;
             this.method = method;

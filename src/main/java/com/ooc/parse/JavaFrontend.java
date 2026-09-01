@@ -228,7 +228,7 @@ public final class JavaFrontend {
                     Set<String> sorted = new TreeSet<>(types);
                     project.typeChecks.add(new Ir.TypeCheck(
                             Ir.TypeCheck.Kind.INSTANCEOF_CHAIN,
-                            String.join(",", sorted), types.size(),
+                            String.join(",", sorted), new ArrayList<>(sorted), types.size(),
                             line(head.getBegin()), methodName,
                             k.qualifiedName, k.name, file));
                 }
@@ -246,7 +246,7 @@ public final class JavaFrontend {
             if (branches >= 2) {
                 project.typeChecks.add(new Ir.TypeCheck(
                         Ir.TypeCheck.Kind.SWITCH,
-                        String.join(",", labels), branches,
+                        String.join(",", labels), new ArrayList<>(), branches,
                         line(sw.getBegin()), methodName,
                         k.qualifiedName, k.name, file));
             }
