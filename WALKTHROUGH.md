@@ -8,7 +8,7 @@
 
 ## 第 0 步 · 检查环境
 
-```bash
+```powershell
 java -version
 mvn -v
 git --version
@@ -30,19 +30,14 @@ git version 2.x
 
 ## 第 1 步 · 构建
 
-```bash
-cd D:\projects\oo-checkup
+```powershell
+cd C:\Users\gx293\Desktop\oo-checkup
 mvn package
 ```
 
 第一次会下载 JavaParser 依赖，约 1-2 分钟。
 
-**预期**：最后出现 `BUILD SUCCESS`，并生成：
-
-```bash
-ls -lh target/oo-checkup.jar
-# -rw-r--r-- 1.5M target/oo-checkup.jar
-```
+**预期**：最后出现 `BUILD SUCCESS`，并生成 `target\oo-checkup.jar`（约 1.5M）。
 
 看到 `BUILD FAILURE` → 见排错 ②
 
@@ -50,9 +45,14 @@ ls -lh target/oo-checkup.jar
 
 ## 第 2 步 · 跑演示：先看「坏代码」
 
-```bash
-java -Dfile.encoding=UTF-8 -jar target/oo-checkup.jar examples/before
+**用启动脚本，编码问题已经帮你处理好了：**
+
+```powershell
+.\checkup.bat examples\before
 ```
+
+> macOS / Linux 用 `./checkup.sh examples/before`
+> PowerShell 里 `.\` 前缀不能省；CMD 里可以直接写 `checkup examples\before`
 
 **预期**（检查表部分）：
 
@@ -68,30 +68,30 @@ java -Dfile.encoding=UTF-8 -jar target/oo-checkup.jar examples/before
   违反 5 项，待确认 1 项
 ```
 
-中文变成乱码 → 见排错 ③
+中文乱码 → 见排错 ③
 
 ### 看全部细节
 
-默认每项只展开 3 处，想看全的话：
+默认每项只展开 3 处：
 
-```bash
-java -Dfile.encoding=UTF-8 -jar target/oo-checkup.jar examples/before --detail 20
+```powershell
+.\checkup.bat examples\before --detail 20
 ```
 
 ### 建议：导出到文件慢慢看
 
-```bash
-java -jar target/oo-checkup.jar examples/before --detail 20 > before.txt
+```powershell
+.\checkup.bat examples\before --detail 20 > before.txt
 ```
 
-写文件时编码不受终端影响，**不会乱码**，也不用加 `-Dfile.encoding`。
+写文件时编码不受终端影响，**一定不会乱码**。用 VS Code 打开看。
 
 ---
 
 ## 第 3 步 · 再看「改好之后」
 
-```bash
-java -Dfile.encoding=UTF-8 -jar target/oo-checkup.jar examples/after
+```powershell
+.\checkup.bat examples\after
 ```
 
 **预期**：
@@ -123,9 +123,9 @@ java -Dfile.encoding=UTF-8 -jar target/oo-checkup.jar examples/after
 
 ### 两份都能编译，可以自己验证不是摆设
 
-```bash
-javac -encoding UTF-8 -d out/before examples/before/library/*.java
-javac -encoding UTF-8 -d out/after  examples/after/library/*.java
+```powershell
+javac -encoding UTF-8 -d out\before examples\before\library\*.java
+javac -encoding UTF-8 -d out\after  examples\after\library\*.java
 ```
 
 ---
@@ -134,21 +134,17 @@ javac -encoding UTF-8 -d out/after  examples/after/library/*.java
 
 不要信我说的，自己验：
 
-```bash
-java -jar target/oo-checkup.jar examples/before --detail 20 > r1.txt
-java -jar target/oo-checkup.jar examples/before --detail 20 > r2.txt
-diff r1.txt r2.txt && echo "完全一致"
+```powershell
+.\checkup.bat examples\before --detail 20 > r1.txt
+.\checkup.bat examples\before --detail 20 > r2.txt
+fc r1.txt r2.txt
 ```
 
-**预期**：输出 `完全一致`，`diff` 不打印任何内容。
+**预期**：`FC: 找不到差异` / `no differences encountered`
 
-换个大项目再验一次：
+Git Bash 里用 `diff r1.txt r2.txt`，无输出即一致。
 
-```bash
-java -jar target/oo-checkup.jar samples/junit5 --detail 20 > b1.txt
-java -jar target/oo-checkup.jar samples/junit5 --detail 20 > b2.txt
-diff b1.txt b2.txt && echo "完全一致"
-```
+换个大项目再验一次（需要先有 `samples\junit5`，见第 6 步）。
 
 ### 为什么能保证
 
@@ -163,9 +159,11 @@ diff b1.txt b2.txt && echo "完全一致"
 
 ## 第 5 步 · 跑你自己的代码
 
-```bash
-java -Dfile.encoding=UTF-8 -jar target/oo-checkup.jar D:\你的作业目录
+```powershell
+.\checkup.bat "C:\你的作业目录" --detail 20 > 报告.txt
 ```
+
+**路径有中文或空格时一定要加引号。**
 
 路径给到**项目根目录**就行，会自动递归找所有 `.java`。
 
@@ -198,14 +196,17 @@ java -Dfile.encoding=UTF-8 -jar target/oo-checkup.jar D:\你的作业目录
 
 想确认「97.8% 准确率」不是我编的：
 
-```bash
+```powershell
 # 下载一个第三方开源库（对照组，公认写得好）
-mkdir -p samples && cd samples
+mkdir samples
+cd samples
 git clone --depth 1 --filter=blob:none --sparse https://github.com/google/guava.git guava
-cd guava && git sparse-checkout set guava/src/com/google/common/base && cd ../..
+cd guava
+git sparse-checkout set guava/src/com/google/common/base
+cd ..\..
 
 # 跑它 —— 好代码应该几乎没有检出
-java -jar target/oo-checkup.jar samples/guava --summary
+.\checkup.bat samples\guava --summary
 ```
 
 **预期**：
@@ -240,7 +241,7 @@ Maven 的环境变量只对**新开的终端**生效。关掉当前窗口重开�
 
 还不行就用全路径：
 
-```bash
+```powershell
 C:\Users\gx293\tools\apache-maven-3.9.16\bin\mvn package
 ```
 
@@ -264,31 +265,77 @@ C:\Users\gx293\tools\apache-maven-3.9.16\bin\mvn package
 
 ### ③ 中文乱码
 
-终端默认不是 UTF-8。三选一：
+**用 `checkup.bat` / `checkup.sh` 就不会遇到**，它们已经把编码处理包进去了。
 
-```bash
-chcp 65001                                     # 切编码
-java -Dfile.encoding=UTF-8 -jar ...            # 加参数
-java -jar ... > report.txt                     # 写文件（推荐，不受终端影响）
+如果你坚持直接调 `java`：
+
+```powershell
+chcp 65001                                 # 切编码，一个窗口执行一次即可
+java -jar target\oo-checkup.jar <路径>
 ```
 
-### ④ 报告说「项目规模过小」
+或者直接导出到文件（**最省事，不受终端影响**）：
+
+```powershell
+java -jar target\oo-checkup.jar <路径> > 报告.txt
+```
+
+### ④ PowerShell 报 `找不到或无法加载主类 .encoding=UTF-8`
+
+完整报错长这样：
+
+```
+错误: 找不到或无法加载主类 .encoding=UTF-8
+原因: java.lang.ClassNotFoundException: /encoding=UTF-8
+```
+
+**原因**：PowerShell 会把 `-Dfile.encoding=UTF-8` 从 `.` 处**拆成两个参数**：
+
+```
+不加引号  →  [-Dfile]  [.encoding=UTF-8]  [-jar]  ...
+                        ↑ java 把它当成了主类名
+加引号    →  [-Dfile.encoding=UTF-8]  [-jar]  ...   ✓
+```
+
+CMD 不会这样，只有 PowerShell 会。
+
+**三种解法**：
+
+```powershell
+.\checkup.bat <路径>                                    # 1. 用脚本（推荐）
+java "-Dfile.encoding=UTF-8" -jar target\oo-checkup.jar <路径>   # 2. 加引号
+java -jar target\oo-checkup.jar <路径> > 报告.txt        # 3. 导出文件，压根不需要这参数
+```
+
+### ⑤ 报错说路径非法 `Illegal char <"> at index 0`
+
+引号被当成路径的一部分了。检查是不是嵌套了引号，或者在 Git Bash 里对引号做了 `\"` 转义。
+
+PowerShell 里正确写法：
+
+```powershell
+.\checkup.bat "C:\Users\gx293\Desktop\我的作业"
+```
+
+### ⑥ 报告说「项目规模过小」
 
 不足 80 有效行时不下结论——50 行的程序全塞在 `main` 里本来就是合理的，
 报出来只会误导。
 
-### ⑤ 检出为空
+### ⑦ 检出为空
 
 - 确认路径下真的有 `.java` 文件
 - 报告开头会写「N 个文件 · N 有效行」，如果是 0 说明路径不对
 - 测试代码默认跳过，加 `--include-tests`
 
-### ⑥ 觉得某条报错了
+### ⑧ 觉得某条报错了
 
 **很有可能你是对的。**已知局限：
 
 - 检查项 1 的「外部访问次数」是按成员名匹配的近似值，不同类的同名字段会串
 - 检查项 2、7 是语义类判据，所以只输出「待确认」不断言违反
+- 检查项 2 要求参数团**跨 ≥2 个类**才报。如果你的代码是「一个 Manager 类包打天下」，
+  同一组参数即使传了七八个方法也不会报——这是已知的漏报场景
 - 已知残留误报 1 条（Guava `Suppliers` 的内部优化路径）
 
 发 issue 时请附上：**触发的代码片段 + 你认为它不该报的理由**。
@@ -298,14 +345,17 @@ java -jar ... > report.txt                     # 写文件（推荐，不受终�
 
 ## 一页速查
 
-```bash
-mvn package                                          # 构建
-java -jar target/oo-checkup.jar <路径>                # 跑
-java -jar target/oo-checkup.jar <路径> --detail 20    # 看全部
-java -jar target/oo-checkup.jar <路径> > out.txt      # 导出（不乱码）
-java -jar target/oo-checkup.jar <路径> --summary      # 一行摘要
-java -jar target/oo-checkup.jar <上级目录> --batch --summary   # 批量对比
+```powershell
+mvn package                                    # 构建
+
+.\checkup.bat <路径>                           # 跑
+.\checkup.bat <路径> --detail 20               # 看全部
+.\checkup.bat <路径> --detail 20 > 报告.txt     # 导出（推荐）
+.\checkup.bat <路径> --summary                 # 一行摘要
+.\checkup.bat <上级目录> --batch --summary      # 批量对比
 ```
+
+macOS / Linux 把 `.\checkup.bat` 换成 `./checkup.sh`，路径分隔符换成 `/`。
 
 | 状态 | 含义 |
 |---|---|

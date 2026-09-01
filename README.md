@@ -57,15 +57,41 @@
 git clone https://github.com/<your-name>/oo-checkup.git
 cd oo-checkup
 mvn package
-
-java -jar target/oo-checkup.jar <你的项目路径>
 ```
 
-Windows 终端中文乱码的话加个参数：
+然后用启动脚本（**已处理好编码，不会乱码**）：
+
+```powershell
+# Windows
+.\checkup.bat <你的项目路径>
+
+# macOS / Linux
+./checkup.sh <你的项目路径>
+```
+
+<details>
+<summary>不想用脚本，直接调 java（点开）</summary>
 
 ```bash
-java -Dfile.encoding=UTF-8 -jar target/oo-checkup.jar <你的项目路径>
+java -jar target/oo-checkup.jar <你的项目路径> > report.txt
 ```
+
+想直接输出到终端而不是文件，Windows 下需要处理编码：
+
+```powershell
+chcp 65001
+java -jar target/oo-checkup.jar <路径>
+```
+
+⚠️ **PowerShell 里写 `-Dfile.encoding=UTF-8` 必须加引号**，
+否则会被从 `.` 处拆成两个参数，报
+`找不到或无法加载主类 .encoding=UTF-8`：
+
+```powershell
+java "-Dfile.encoding=UTF-8" -jar target/oo-checkup.jar <路径>
+```
+
+</details>
 
 ### 参数
 
@@ -78,9 +104,9 @@ java -Dfile.encoding=UTF-8 -jar target/oo-checkup.jar <你的项目路径>
 
 ### 试一下
 
-```bash
-java -jar target/oo-checkup.jar examples/before    # 一堆问题
-java -jar target/oo-checkup.jar examples/after     # 全部通过
+```powershell
+.\checkup.bat examples\before    # 一堆问题
+.\checkup.bat examples\after     # 全部通过
 ```
 
 ---
@@ -266,6 +292,8 @@ src/main/java/com/ooc/
 ├── explain/     解释层：Explainer 接口 + TemplateExplainer
 └── report/      检查表渲染
 
+checkup.bat      Windows 启动脚本（已处理编码）
+checkup.sh       macOS / Linux 启动脚本
 examples/        before / after 演示代码（可编译运行）
 testdata/        规则的单元测试用例
 runs/            六轮验证的原始输出与逐条核验记录
