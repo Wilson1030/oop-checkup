@@ -1,0 +1,2249 @@
+════════════════════════════════════════════════════════════
+  面向对象转换检查表
+  junit5 · 184 个文件 · 7869 有效行 · 235 个类型
+  规模档位：大型（> 500 有效行）— 阈值 x1.5
+════════════════════════════════════════════════════════════
+
+  1. 数据与行为是否结合 .......... 通过
+  2. 是否避免散装参数传递 ........ 72 处待确认
+  3. 是否用多态替代类型判断 ...... 2 处违反
+  4. static 是否被滥用 ........... 1 处违反
+  5. 封装是否完整 ................ 通过
+  6. 入口方法是否过度承担 ........ 通过
+  7. 是否避免基本类型偏执 ........ 未实现
+
+  违反 2 项，待确认 1 项
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (Deque<Integer> indexes, Object messageOrSupplier)  跨 2 个
+  类、17 个方法，共出现 28 次
+
+      AssertArrayEquals.java:184   assertArrayEquals(boolean[] expected, boolean[] actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:206   assertArrayEquals(char[] expected, char[] actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:229   assertArrayEquals(byte[] expected, byte[] actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:252   assertArrayEquals(short[] expected, short[] actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:275   assertArrayEquals(int[] expected, int[] actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:298   assertArrayEquals(long[] expected, long[] actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:321   assertArrayEquals(float[] expected, float[] actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:344   assertArrayEquals(float[] expected, float[] actual, float delta, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:368   assertArrayEquals(double[] expected, double[] actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:391   assertArrayEquals(double[] expected, double[] actual, double delta, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:415   assertArrayEquals(Object[] expected, Object[] actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:445   assertArrayElementsEqual(Object expected, Object actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:488   failExpectedArrayIsNull(Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:492   expectedArrayIsNullFailure(Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:501   failActualArrayIsNull(Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:505   actualArrayIsNullFailure(Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:514   assertArraysHaveSameLength(int expected, int actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:528   failArraysNotEqual(Object expected, Object actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertIterableEquals.java:54   assertIterableEquals(Iterable<?> expected, Iterable<?> actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertIterableEquals.java:59   assertIterableEquals(Iterable<?> expected, Iterable<?> actual, Deque<Integer> indexes, Object messageOrSupplier, Map<Pair,Status> investigatedElements)
+      AssertIterableEquals.java:93   assertIterableElementsEqual(Object expected, Object actual, Deque<Integer> indexes, Object messageOrSupplier, Map<Pair,Status> investigatedElements)
+      AssertIterableEquals.java:137   assertIterablesNotNull(Object expected, Object actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertIterableEquals.java:148   failExpectedIterableIsNull(Deque<Integer> indexes, Object messageOrSupplier)
+      AssertIterableEquals.java:152   expectedIterableIsNullFailure(Deque<Integer> indexes, Object messageOrSupplier)
+      AssertIterableEquals.java:161   failActualIterableIsNull(Deque<Integer> indexes, Object messageOrSupplier)
+      AssertIterableEquals.java:165   actualIterableIsNullFailure(Deque<Integer> indexes, Object messageOrSupplier)
+      AssertIterableEquals.java:174   assertIteratorsAreEmpty(Iterator<?> expected, Iterator<?> actual, int processed, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertIterableEquals.java:193   failIterablesNotEqual(Object expected, Object actual, Deque<Integer> indexes, Object messageOrSupplier)
+
+    ▸ 发生了什么
+      (Deque<Integer> indexes, Object messageOrSupplier) 这 2 
+      个参数，在 AssertArrayEquals、AssertIterableEquals 共 2 
+      个类的 28 个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 28 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 indexes、messageOrSupplier 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  Deque<Integer> indexes;
+                  Object messageOrSupplier;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 28 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (Object expected, Object actual)  跨 6 个类、10 个方法，共出
+  现 20 次
+
+      AssertArrayEquals.java:445   assertArrayElementsEqual(Object expected, Object actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertArrayEquals.java:528   failArraysNotEqual(Object expected, Object actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertEquals.java:178   assertEquals(Object expected, Object actual)
+      AssertEquals.java:182   assertEquals(Object expected, Object actual, String message)
+      AssertEquals.java:188   assertEquals(Object expected, Object actual, Supplier<String> messageSupplier)
+      AssertEquals.java:195   failNotEqual(Object expected, Object actual, Object messageOrSupplier)
+      AssertionFailureBuilder.java:261   formatValues(Object expected, Object actual)
+      Assertions.java:1198   assertEquals(Object expected, Object actual)
+      Assertions.java:1209   assertEquals(Object expected, Object actual, String message)
+      Assertions.java:1220   assertEquals(Object expected, Object actual, Supplier<String> messageSupplier)
+      Assertions.java:2961   assertSame(Object expected, Object actual)
+      Assertions.java:2974   assertSame(Object expected, Object actual, String message)
+      Assertions.java:2988   assertSame(Object expected, Object actual, Supplier<String> messageSupplier)
+      AssertIterableEquals.java:93   assertIterableElementsEqual(Object expected, Object actual, Deque<Integer> indexes, Object messageOrSupplier, Map<Pair,Status> investigatedElements)
+      AssertIterableEquals.java:137   assertIterablesNotNull(Object expected, Object actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertIterableEquals.java:193   failIterablesNotEqual(Object expected, Object actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertSame.java:31   assertSame(Object expected, Object actual)
+      AssertSame.java:35   assertSame(Object expected, Object actual, String message)
+      AssertSame.java:42   assertSame(Object expected, Object actual, Supplier<String> messageSupplier)
+      AssertSame.java:50   failNotSame(Object expected, Object actual, Object messageOrSupplier)
+
+    ▸ 发生了什么
+      (Object expected, Object actual) 这 2 个参数，在 
+      AssertArrayEquals、AssertEquals、AssertionFailureBuilder
+      等 6 项 共 6 个类的 20 个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 20 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 expected、actual 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  Object expected;
+                  Object actual;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 20 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (Duration timeout, ThrowingSupplier<T> supplier)  跨 4 个
+  类、3 个方法，共出现 14 次
+
+      Assertions.java:3500   assertTimeout(Duration timeout, ThrowingSupplier<T> supplier)
+      Assertions.java:3523   assertTimeout(Duration timeout, ThrowingSupplier<T> supplier, String message)
+      Assertions.java:3548   assertTimeout(Duration timeout, ThrowingSupplier<T> supplier, Supplier<String> messageSupplier)
+      Assertions.java:3633   assertTimeoutPreemptively(Duration timeout, ThrowingSupplier<T> supplier)
+      Assertions.java:3656   assertTimeoutPreemptively(Duration timeout, ThrowingSupplier<T> supplier, String message)
+      Assertions.java:3680   assertTimeoutPreemptively(Duration timeout, ThrowingSupplier<T> supplier, Supplier<String> messageSupplier)
+      AssertTimeout.java:53   assertTimeout(Duration timeout, ThrowingSupplier<T> supplier)
+      AssertTimeout.java:57   assertTimeout(Duration timeout, ThrowingSupplier<T> supplier, String message)
+      AssertTimeout.java:62   assertTimeout(Duration timeout, ThrowingSupplier<T> supplier, Supplier<String> messageSupplier)
+      AssertTimeout.java:67   assertTimeout(Duration timeout, ThrowingSupplier<T> supplier, Object messageOrSupplier)
+      AssertTimeoutPreemptively.java:54   assertTimeoutPreemptively(Duration timeout, ThrowingSupplier<T> supplier)
+      AssertTimeoutPreemptively.java:58   assertTimeoutPreemptively(Duration timeout, ThrowingSupplier<T> supplier, String message)
+      AssertTimeoutPreemptively.java:64   assertTimeoutPreemptively(Duration timeout, ThrowingSupplier<T> supplier, Supplier<String> messageSupplier)
+      PreemptiveTimeoutUtils.java:60   executeWithPreemptiveTimeout(Duration timeout, ThrowingSupplier<T> supplier, Supplier<String> messageSupplier, TimeoutFailureFactory<E> failureFactory)
+
+    ▸ 发生了什么
+      (Duration timeout, ThrowingSupplier<T> supplier) 这 2 个
+      参数，在 Assertions、AssertTimeout、
+      AssertTimeoutPreemptively 等 4 项 共 4 个类的 14 个方法
+      里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 14 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 timeout、supplier 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  Duration timeout;
+                  ThrowingSupplier<T> supplier;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 14 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (Class<T> expectedType, Executable executable)  跨 3 个类、2
+  个方法，共出现 14 次
+
+      Assertions.java:3164   assertThrowsExactly(Class<T> expectedType, Executable executable)
+      Assertions.java:3187   assertThrowsExactly(Class<T> expectedType, Executable executable, String message)
+      Assertions.java:3212   assertThrowsExactly(Class<T> expectedType, Executable executable, Supplier<String> messageSupplier)
+      Assertions.java:3233   assertThrows(Class<T> expectedType, Executable executable)
+      Assertions.java:3258   assertThrows(Class<T> expectedType, Executable executable, String message)
+      Assertions.java:3285   assertThrows(Class<T> expectedType, Executable executable, Supplier<String> messageSupplier)
+      AssertThrows.java:34   assertThrows(Class<T> expectedType, Executable executable)
+      AssertThrows.java:38   assertThrows(Class<T> expectedType, Executable executable, String message)
+      AssertThrows.java:43   assertThrows(Class<T> expectedType, Executable executable, Supplier<String> messageSupplier)
+      AssertThrows.java:49   assertThrows(Class<T> expectedType, Executable executable, Object messageOrSupplier)
+      AssertThrowsExactly.java:34   assertThrowsExactly(Class<T> expectedType, Executable executable)
+      AssertThrowsExactly.java:38   assertThrowsExactly(Class<T> expectedType, Executable executable, String message)
+      AssertThrowsExactly.java:43   assertThrowsExactly(Class<T> expectedType, Executable executable, Supplier<String> messageSupplier)
+      AssertThrowsExactly.java:49   assertThrowsExactly(Class<T> expectedType, Executable executable, Object messageOrSupplier)
+
+    ▸ 发生了什么
+      (Class<T> expectedType, Executable executable) 这 2 个参
+      数，在 Assertions、AssertThrows、AssertThrowsExactly 共 
+      3 个类的 14 个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 14 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 expectedType、executable 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  Class<T> expectedType;
+                  Executable executable;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 14 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (Object actual, String message)  跨 7 个类、6 个方法，共出现
+  12 次
+
+      AssertEquals.java:182   assertEquals(Object expected, Object actual, String message)
+      Assertions.java:315   assertNull(Object actual, String message)
+      Assertions.java:343   assertNotNull(Object actual, String message)
+      Assertions.java:1209   assertEquals(Object expected, Object actual, String message)
+      Assertions.java:2932   assertNotEquals(Object unexpected, Object actual, String message)
+      Assertions.java:2974   assertSame(Object expected, Object actual, String message)
+      Assertions.java:3014   assertNotSame(Object unexpected, Object actual, String message)
+      AssertNotEquals.java:265   assertNotEquals(Object unexpected, Object actual, String message)
+      AssertNotNull.java:37   assertNotNull(Object actual, String message)
+      AssertNotSame.java:35   assertNotSame(Object unexpected, Object actual, String message)
+      AssertNull.java:37   assertNull(Object actual, String message)
+      AssertSame.java:35   assertSame(Object expected, Object actual, String message)
+
+    ▸ 发生了什么
+      (Object actual, String message) 这 2 个参数，在 
+      AssertEquals、Assertions、AssertNotEquals 等 7 项 共 7 
+      个类的 12 个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 12 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 actual、message 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  Object actual;
+                  String message;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 12 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (Object actual, Supplier<String> messageSupplier)  跨 7 个
+  类、6 个方法，共出现 12 次
+
+      AssertEquals.java:188   assertEquals(Object expected, Object actual, Supplier<String> messageSupplier)
+      Assertions.java:324   assertNull(Object actual, Supplier<String> messageSupplier)
+      Assertions.java:352   assertNotNull(Object actual, Supplier<String> messageSupplier)
+      Assertions.java:1220   assertEquals(Object expected, Object actual, Supplier<String> messageSupplier)
+      Assertions.java:2946   assertNotEquals(Object unexpected, Object actual, Supplier<String> messageSupplier)
+      Assertions.java:2988   assertSame(Object expected, Object actual, Supplier<String> messageSupplier)
+      Assertions.java:3027   assertNotSame(Object unexpected, Object actual, Supplier<String> messageSupplier)
+      AssertNotEquals.java:271   assertNotEquals(Object unexpected, Object actual, Supplier<String> messageSupplier)
+      AssertNotNull.java:44   assertNotNull(Object actual, Supplier<String> messageSupplier)
+      AssertNotSame.java:42   assertNotSame(Object unexpected, Object actual, Supplier<String> messageSupplier)
+      AssertNull.java:44   assertNull(Object actual, Supplier<String> messageSupplier)
+      AssertSame.java:42   assertSame(Object expected, Object actual, Supplier<String> messageSupplier)
+
+    ▸ 发生了什么
+      (Object actual, Supplier<String> messageSupplier) 这 2 
+      个参数，在 AssertEquals、Assertions、AssertNotEquals 等 
+      7 项 共 7 个类的 12 个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 12 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 actual、messageSupplier 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  Object actual;
+                  Supplier<String> messageSupplier;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 12 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (double actual, double delta)  跨 3 个类、2 个方法，共出现 
+  12 次
+
+      AssertEquals.java:82   assertEquals(double expected, double actual, double delta)
+      AssertEquals.java:86   assertEquals(double expected, double actual, double delta, String message)
+      AssertEquals.java:92   assertEquals(double expected, double actual, double delta, Supplier<String> messageSupplier)
+      Assertions.java:1062   assertEquals(double expected, double actual, double delta)
+      Assertions.java:1072   assertEquals(double expected, double actual, double delta, String message)
+      Assertions.java:1082   assertEquals(double expected, double actual, double delta, Supplier<String> messageSupplier)
+      Assertions.java:2732   assertNotEquals(double unexpected, double actual, double delta)
+      Assertions.java:2748   assertNotEquals(double unexpected, double actual, double delta, String message)
+      Assertions.java:2762   assertNotEquals(double unexpected, double actual, double delta, Supplier<String> messageSupplier)
+      AssertNotEquals.java:213   assertNotEquals(double unexpected, double actual, double delta)
+      AssertNotEquals.java:220   assertNotEquals(double unexpected, double actual, double delta, String message)
+      AssertNotEquals.java:229   assertNotEquals(double unexpected, double actual, double delta, Supplier<String> messageSupplier)
+
+    ▸ 发生了什么
+      (double actual, double delta) 这 2 个参数，在 
+      AssertEquals、Assertions、AssertNotEquals 共 3 个类的 12
+      个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 12 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 actual、delta 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  double actual;
+                  double delta;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 12 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (float actual, float delta)  跨 3 个类、2 个方法，共出现 12 
+  次
+
+      AssertEquals.java:114   assertEquals(float expected, float actual, float delta)
+      AssertEquals.java:118   assertEquals(float expected, float actual, float delta, String message)
+      AssertEquals.java:124   assertEquals(float expected, float actual, float delta, Supplier<String> messageSupplier)
+      Assertions.java:904   assertEquals(float expected, float actual, float delta)
+      Assertions.java:914   assertEquals(float expected, float actual, float delta, String message)
+      Assertions.java:924   assertEquals(float expected, float actual, float delta, Supplier<String> messageSupplier)
+      Assertions.java:2520   assertNotEquals(float unexpected, float actual, float delta)
+      Assertions.java:2536   assertNotEquals(float unexpected, float actual, float delta, String message)
+      Assertions.java:2550   assertNotEquals(float unexpected, float actual, float delta, Supplier<String> messageSupplier)
+      AssertNotEquals.java:162   assertNotEquals(float unexpected, float actual, float delta)
+      AssertNotEquals.java:169   assertNotEquals(float unexpected, float actual, float delta, String message)
+      AssertNotEquals.java:178   assertNotEquals(float unexpected, float actual, float delta, Supplier<String> messageSupplier)
+
+    ▸ 发生了什么
+      (float actual, float delta) 这 2 个参数，在 
+      AssertEquals、Assertions、AssertNotEquals 共 3 个类的 12
+      个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 12 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 actual、delta 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  float actual;
+                  float delta;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 12 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (Object unexpected, Object actual)  跨 3 个类、2 个方法，共
+  出现 12 次
+
+      Assertions.java:2919   assertNotEquals(Object unexpected, Object actual)
+      Assertions.java:2932   assertNotEquals(Object unexpected, Object actual, String message)
+      Assertions.java:2946   assertNotEquals(Object unexpected, Object actual, Supplier<String> messageSupplier)
+      Assertions.java:3002   assertNotSame(Object unexpected, Object actual)
+      Assertions.java:3014   assertNotSame(Object unexpected, Object actual, String message)
+      Assertions.java:3027   assertNotSame(Object unexpected, Object actual, Supplier<String> messageSupplier)
+      AssertNotEquals.java:261   assertNotEquals(Object unexpected, Object actual)
+      AssertNotEquals.java:265   assertNotEquals(Object unexpected, Object actual, String message)
+      AssertNotEquals.java:271   assertNotEquals(Object unexpected, Object actual, Supplier<String> messageSupplier)
+      AssertNotSame.java:31   assertNotSame(Object unexpected, Object actual)
+      AssertNotSame.java:35   assertNotSame(Object unexpected, Object actual, String message)
+      AssertNotSame.java:42   assertNotSame(Object unexpected, Object actual, Supplier<String> messageSupplier)
+
+    ▸ 发生了什么
+      (Object unexpected, Object actual) 这 2 个参数，在 
+      Assertions、AssertNotEquals、AssertNotSame 共 3 个类的 
+      12 个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 12 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 unexpected、actual 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  Object unexpected;
+                  Object actual;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 12 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (Duration timeout, Executable executable)  跨 3 个类、2 个方
+  法，共出现 12 次
+
+      Assertions.java:3433   assertTimeout(Duration timeout, Executable executable)
+      Assertions.java:3454   assertTimeout(Duration timeout, Executable executable, String message)
+      Assertions.java:3476   assertTimeout(Duration timeout, Executable executable, Supplier<String> messageSupplier)
+      Assertions.java:3569   assertTimeoutPreemptively(Duration timeout, Executable executable)
+      Assertions.java:3589   assertTimeoutPreemptively(Duration timeout, Executable executable, String message)
+      Assertions.java:3610   assertTimeoutPreemptively(Duration timeout, Executable executable, Supplier<String> messageSupplier)
+      AssertTimeout.java:35   assertTimeout(Duration timeout, Executable executable)
+      AssertTimeout.java:39   assertTimeout(Duration timeout, Executable executable, String message)
+      AssertTimeout.java:46   assertTimeout(Duration timeout, Executable executable, Supplier<String> messageSupplier)
+      AssertTimeoutPreemptively.java:33   assertTimeoutPreemptively(Duration timeout, Executable executable)
+      AssertTimeoutPreemptively.java:37   assertTimeoutPreemptively(Duration timeout, Executable executable, String message)
+      AssertTimeoutPreemptively.java:45   assertTimeoutPreemptively(Duration timeout, Executable executable, Supplier<String> messageSupplier)
+
+    ▸ 发生了什么
+      (Duration timeout, Executable executable) 这 2 个参数，
+      在 Assertions、AssertTimeout、AssertTimeoutPreemptively 
+      共 3 个类的 12 个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 12 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 timeout、executable 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  Duration timeout;
+                  Executable executable;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 12 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (Executable executable, String message)  跨 6 个类、5 个方
+  法，共出现 10 次
+
+      AssertDoesNotThrow.java:42   assertDoesNotThrow(Executable executable, String message)
+      Assertions.java:3187   assertThrowsExactly(Class<T> expectedType, Executable executable, String message)
+      Assertions.java:3258   assertThrows(Class<T> expectedType, Executable executable, String message)
+      Assertions.java:3323   assertDoesNotThrow(Executable executable, String message)
+      Assertions.java:3454   assertTimeout(Duration timeout, Executable executable, String message)
+      Assertions.java:3589   assertTimeoutPreemptively(Duration timeout, Executable executable, String message)
+      AssertThrows.java:38   assertThrows(Class<T> expectedType, Executable executable, String message)
+      AssertThrowsExactly.java:38   assertThrowsExactly(Class<T> expectedType, Executable executable, String message)
+      AssertTimeout.java:39   assertTimeout(Duration timeout, Executable executable, String message)
+      AssertTimeoutPreemptively.java:37   assertTimeoutPreemptively(Duration timeout, Executable executable, String message)
+
+    ▸ 发生了什么
+      (Executable executable, String message) 这 2 个参数，在 
+      AssertDoesNotThrow、Assertions、AssertThrows 等 6 项 共 
+      6 个类的 10 个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 10 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 executable、message 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  Executable executable;
+                  String message;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 10 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (Executable executable, Supplier<String> messageSupplier)  
+  跨 6 个类、5 个方法，共出现 10 次
+
+      AssertDoesNotThrow.java:46   assertDoesNotThrow(Executable executable, Supplier<String> messageSupplier)
+      Assertions.java:3212   assertThrowsExactly(Class<T> expectedType, Executable executable, Supplier<String> messageSupplier)
+      Assertions.java:3285   assertThrows(Class<T> expectedType, Executable executable, Supplier<String> messageSupplier)
+      Assertions.java:3343   assertDoesNotThrow(Executable executable, Supplier<String> messageSupplier)
+      Assertions.java:3476   assertTimeout(Duration timeout, Executable executable, Supplier<String> messageSupplier)
+      Assertions.java:3610   assertTimeoutPreemptively(Duration timeout, Executable executable, Supplier<String> messageSupplier)
+      AssertThrows.java:43   assertThrows(Class<T> expectedType, Executable executable, Supplier<String> messageSupplier)
+      AssertThrowsExactly.java:43   assertThrowsExactly(Class<T> expectedType, Executable executable, Supplier<String> messageSupplier)
+      AssertTimeout.java:46   assertTimeout(Duration timeout, Executable executable, Supplier<String> messageSupplier)
+      AssertTimeoutPreemptively.java:45   assertTimeoutPreemptively(Duration timeout, Executable executable, Supplier<String> messageSupplier)
+
+    ▸ 发生了什么
+      (Executable executable, Supplier<String> 
+      messageSupplier) 这 2 个参数，在 AssertDoesNotThrow、
+      Assertions、AssertThrows 等 6 项 共 6 个类的 10 个方法里
+      重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 10 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 executable、messageSupplier 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  Executable executable;
+                  Supplier<String> messageSupplier;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 10 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (Class<?> testClass, Method testMethod)  跨 6 个类、2 个方
+  法，共出现 7 次
+
+      DisplayNameGenerator.java:161   generateDisplayNameForMethod(Class<?> testClass, Method testMethod)
+      DisplayNameGenerator.java:190   generateDisplayNameForMethod(List<Class<?>> enclosingInstanceTypes, Class<?> testClass, Method testMethod)
+      DisplayNameGenerator.java:239   generateDisplayNameForMethod(List<Class<?>> enclosingInstanceTypes, Class<?> testClass, Method testMethod)
+      DisplayNameGenerator.java:264   generateDisplayNameForMethod(List<Class<?>> enclosingInstanceTypes, Class<?> testClass, Method testMethod)
+      DisplayNameGenerator.java:304   generateDisplayNameForMethod(List<Class<?>> enclosingInstanceTypes, Class<?> testClass, Method testMethod)
+      DisplayNameGenerator.java:380   generateDisplayNameForMethod(List<Class<?>> enclosingInstanceTypes, Class<?> testClass, Method testMethod)
+      ResourceLocksProvider.java:126   provideForMethod(List<Class<?>> enclosingInstanceTypes, Class<?> testClass, Method testMethod)
+
+    ▸ 发生了什么
+      (Class<?> testClass, Method testMethod) 这 2 个参数，在 
+      DisplayNameGenerator、Standard、Simple 等 6 项 共 6 个类
+      的 7 个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 7 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 testClass、testMethod 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  Class<?> testClass;
+                  Method testMethod;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 7 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (List<Class<?>> enclosingInstanceTypes, Class<?> testClass) 
+  跨 6 个类、3 个方法，共出现 7 次
+
+      DisplayNameGenerator.java:190   generateDisplayNameForMethod(List<Class<?>> enclosingInstanceTypes, Class<?> testClass, Method testMethod)
+      DisplayNameGenerator.java:239   generateDisplayNameForMethod(List<Class<?>> enclosingInstanceTypes, Class<?> testClass, Method testMethod)
+      DisplayNameGenerator.java:264   generateDisplayNameForMethod(List<Class<?>> enclosingInstanceTypes, Class<?> testClass, Method testMethod)
+      DisplayNameGenerator.java:304   generateDisplayNameForMethod(List<Class<?>> enclosingInstanceTypes, Class<?> testClass, Method testMethod)
+      DisplayNameGenerator.java:380   generateDisplayNameForMethod(List<Class<?>> enclosingInstanceTypes, Class<?> testClass, Method testMethod)
+      ResourceLocksProvider.java:91   provideForNestedClass(List<Class<?>> enclosingInstanceTypes, Class<?> testClass)
+      ResourceLocksProvider.java:126   provideForMethod(List<Class<?>> enclosingInstanceTypes, Class<?> testClass, Method testMethod)
+
+    ▸ 发生了什么
+      (List<Class<?>> enclosingInstanceTypes, Class<?> 
+      testClass) 这 2 个参数，在 DisplayNameGenerator、
+      Standard、Simple 等 6 项 共 6 个类的 7 个方法里重复出
+      现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 7 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 enclosingInstanceTypes、testClass 起一个名字
+          吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  List<Class<?>> enclosingInstanceTypes;
+                  Class<?> testClass;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 7 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (ThrowingSupplier<T> supplier, Supplier<String> 
+  messageSupplier)  跨 5 个类、4 个方法，共出现 7 次
+
+      AssertDoesNotThrow.java:68   assertDoesNotThrow(ThrowingSupplier<T> supplier, Supplier<String> messageSupplier)
+      Assertions.java:3408   assertDoesNotThrow(ThrowingSupplier<T> supplier, Supplier<String> messageSupplier)
+      Assertions.java:3548   assertTimeout(Duration timeout, ThrowingSupplier<T> supplier, Supplier<String> messageSupplier)
+      Assertions.java:3680   assertTimeoutPreemptively(Duration timeout, ThrowingSupplier<T> supplier, Supplier<String> messageSupplier)
+      AssertTimeout.java:62   assertTimeout(Duration timeout, ThrowingSupplier<T> supplier, Supplier<String> messageSupplier)
+      AssertTimeoutPreemptively.java:64   assertTimeoutPreemptively(Duration timeout, ThrowingSupplier<T> supplier, Supplier<String> messageSupplier)
+      PreemptiveTimeoutUtils.java:60   executeWithPreemptiveTimeout(Duration timeout, ThrowingSupplier<T> supplier, Supplier<String> messageSupplier, TimeoutFailureFactory<E> failureFactory)
+
+    ▸ 发生了什么
+      (ThrowingSupplier<T> supplier, Supplier<String> 
+      messageSupplier) 这 2 个参数，在 AssertDoesNotThrow、
+      Assertions、AssertTimeout 等 5 项 共 5 个类的 7 个方法里
+      重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 7 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 supplier、messageSupplier 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  ThrowingSupplier<T> supplier;
+                  Supplier<String> messageSupplier;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 7 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (int expected, int actual)  跨 3 个类、2 个方法，共出现 7 次
+
+      AssertArrayEquals.java:514   assertArraysHaveSameLength(int expected, int actual, Deque<Integer> indexes, Object messageOrSupplier)
+      AssertEquals.java:146   assertEquals(int expected, int actual)
+      AssertEquals.java:150   assertEquals(int expected, int actual, String message)
+      AssertEquals.java:156   assertEquals(int expected, int actual, Supplier<String> messageSupplier)
+      Assertions.java:568   assertEquals(int expected, int actual)
+      Assertions.java:600   assertEquals(int expected, int actual, String message)
+      Assertions.java:635   assertEquals(int expected, int actual, Supplier<String> messageSupplier)
+
+    ▸ 发生了什么
+      (int expected, int actual) 这 2 个参数，在 
+      AssertArrayEquals、AssertEquals、Assertions 共 3 个类的 
+      7 个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 7 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 expected、actual 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  int expected;
+                  int actual;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 7 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (List<Class<?>> enclosingInstanceTypes, Class<?> testClass, 
+  Method testMethod)  跨 6 个类、2 个方法，共出现 6 次
+
+      DisplayNameGenerator.java:190   generateDisplayNameForMethod(List<Class<?>> enclosingInstanceTypes, Class<?> testClass, Method testMethod)
+      DisplayNameGenerator.java:239   generateDisplayNameForMethod(List<Class<?>> enclosingInstanceTypes, Class<?> testClass, Method testMethod)
+      DisplayNameGenerator.java:264   generateDisplayNameForMethod(List<Class<?>> enclosingInstanceTypes, Class<?> testClass, Method testMethod)
+      DisplayNameGenerator.java:304   generateDisplayNameForMethod(List<Class<?>> enclosingInstanceTypes, Class<?> testClass, Method testMethod)
+      DisplayNameGenerator.java:380   generateDisplayNameForMethod(List<Class<?>> enclosingInstanceTypes, Class<?> testClass, Method testMethod)
+      ResourceLocksProvider.java:126   provideForMethod(List<Class<?>> enclosingInstanceTypes, Class<?> testClass, Method testMethod)
+
+    ▸ 发生了什么
+      (List<Class<?>> enclosingInstanceTypes, Class<?> 
+      testClass, Method testMethod) 这 3 个参数，在 
+      DisplayNameGenerator、Standard、Simple 等 6 项 共 6 个类
+      的 6 个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 6 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 enclosingInstanceTypes、testClass、testMethod
+          起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  List<Class<?>> enclosingInstanceTypes;
+                  Class<?> testClass;
+                  Method testMethod;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 6 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (String message, Throwable cause)  跨 6 个类、6 个方法，共出
+  现 6 次
+
+      Assertions.java:152   fail(String message, Throwable cause)
+      AssertionUtils.java:48   failure(String message, Throwable cause)
+      ExtensionConfigurationException.java:42   ExtensionConfigurationException(String message, Throwable cause)
+      ExtensionContextException.java:45   ExtensionContextException(String message, Throwable cause)
+      ParameterResolutionException.java:55   ParameterResolutionException(String message, Throwable cause)
+      TestInstantiationException.java:36   TestInstantiationException(String message, Throwable cause)
+
+    ▸ 发生了什么
+      (String message, Throwable cause) 这 2 个参数，在 
+      Assertions、AssertionUtils、
+      ExtensionConfigurationException 等 6 项 共 6 个类的 6 个
+      方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 6 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 message、cause 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  String message;
+                  Throwable cause;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 6 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (float delta, String message)  跨 4 个类、3 个方法，共出现 6
+  次
+
+      AssertArrayEquals.java:133   assertArrayEquals(float[] expected, float[] actual, float delta, String message)
+      AssertEquals.java:118   assertEquals(float expected, float actual, float delta, String message)
+      Assertions.java:914   assertEquals(float expected, float actual, float delta, String message)
+      Assertions.java:1440   assertArrayEquals(float[] expected, float[] actual, float delta, String message)
+      Assertions.java:2536   assertNotEquals(float unexpected, float actual, float delta, String message)
+      AssertNotEquals.java:169   assertNotEquals(float unexpected, float actual, float delta, String message)
+
+    ▸ 发生了什么
+      (float delta, String message) 这 2 个参数，在 
+      AssertArrayEquals、AssertEquals、Assertions 等 4 项 共 4
+      个类的 6 个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 6 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 delta、message 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  float delta;
+                  String message;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 6 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (float delta, Supplier<String> messageSupplier)  跨 4 个类、
+  3 个方法，共出现 6 次
+
+      AssertArrayEquals.java:138   assertArrayEquals(float[] expected, float[] actual, float delta, Supplier<String> messageSupplier)
+      AssertEquals.java:124   assertEquals(float expected, float actual, float delta, Supplier<String> messageSupplier)
+      Assertions.java:924   assertEquals(float expected, float actual, float delta, Supplier<String> messageSupplier)
+      Assertions.java:1451   assertArrayEquals(float[] expected, float[] actual, float delta, Supplier<String> messageSupplier)
+      Assertions.java:2550   assertNotEquals(float unexpected, float actual, float delta, Supplier<String> messageSupplier)
+      AssertNotEquals.java:178   assertNotEquals(float unexpected, float actual, float delta, Supplier<String> messageSupplier)
+
+    ▸ 发生了什么
+      (float delta, Supplier<String> messageSupplier) 这 2 个
+      参数，在 AssertArrayEquals、AssertEquals、Assertions 等 
+      4 项 共 4 个类的 6 个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 6 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 delta、messageSupplier 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  float delta;
+                  Supplier<String> messageSupplier;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 6 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (double delta, String message)  跨 4 个类、3 个方法，共出现 
+  6 次
+
+      AssertArrayEquals.java:160   assertArrayEquals(double[] expected, double[] actual, double delta, String message)
+      AssertEquals.java:86   assertEquals(double expected, double actual, double delta, String message)
+      Assertions.java:1072   assertEquals(double expected, double actual, double delta, String message)
+      Assertions.java:1502   assertArrayEquals(double[] expected, double[] actual, double delta, String message)
+      Assertions.java:2748   assertNotEquals(double unexpected, double actual, double delta, String message)
+      AssertNotEquals.java:220   assertNotEquals(double unexpected, double actual, double delta, String message)
+
+    ▸ 发生了什么
+      (double delta, String message) 这 2 个参数，在 
+      AssertArrayEquals、AssertEquals、Assertions 等 4 项 共 4
+      个类的 6 个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 6 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 delta、message 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  double delta;
+                  String message;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 6 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (double delta, Supplier<String> messageSupplier)  跨 4 个
+  类、3 个方法，共出现 6 次
+
+      AssertArrayEquals.java:165   assertArrayEquals(double[] expected, double[] actual, double delta, Supplier<String> messageSupplier)
+      AssertEquals.java:92   assertEquals(double expected, double actual, double delta, Supplier<String> messageSupplier)
+      Assertions.java:1082   assertEquals(double expected, double actual, double delta, Supplier<String> messageSupplier)
+      Assertions.java:1513   assertArrayEquals(double[] expected, double[] actual, double delta, Supplier<String> messageSupplier)
+      Assertions.java:2762   assertNotEquals(double unexpected, double actual, double delta, Supplier<String> messageSupplier)
+      AssertNotEquals.java:229   assertNotEquals(double unexpected, double actual, double delta, Supplier<String> messageSupplier)
+
+    ▸ 发生了什么
+      (double delta, Supplier<String> messageSupplier) 这 2 个
+      参数，在 AssertArrayEquals、AssertEquals、Assertions 等 
+      4 项 共 4 个类的 6 个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 6 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 delta、messageSupplier 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  double delta;
+                  Supplier<String> messageSupplier;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 6 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (ThrowingSupplier<T> supplier, String message)  跨 4 个类、3
+  个方法，共出现 6 次
+
+      AssertDoesNotThrow.java:64   assertDoesNotThrow(ThrowingSupplier<T> supplier, String message)
+      Assertions.java:3385   assertDoesNotThrow(ThrowingSupplier<T> supplier, String message)
+      Assertions.java:3523   assertTimeout(Duration timeout, ThrowingSupplier<T> supplier, String message)
+      Assertions.java:3656   assertTimeoutPreemptively(Duration timeout, ThrowingSupplier<T> supplier, String message)
+      AssertTimeout.java:57   assertTimeout(Duration timeout, ThrowingSupplier<T> supplier, String message)
+      AssertTimeoutPreemptively.java:58   assertTimeoutPreemptively(Duration timeout, ThrowingSupplier<T> supplier, String message)
+
+    ▸ 发生了什么
+      (ThrowingSupplier<T> supplier, String message) 这 2 个参
+      数，在 AssertDoesNotThrow、Assertions、AssertTimeout 等 
+      4 项 共 4 个类的 6 个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 6 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 supplier、message 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  ThrowingSupplier<T> supplier;
+                  String message;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 6 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (byte actual, String message)  跨 3 个类、2 个方法，共出现 6
+  次
+
+      AssertEquals.java:38   assertEquals(byte expected, byte actual, String message)
+      Assertions.java:498   assertEquals(byte expected, byte actual, String message)
+      Assertions.java:514   assertEquals(Byte expected, byte actual, String message)
+      Assertions.java:1818   assertNotEquals(byte unexpected, byte actual, String message)
+      Assertions.java:1842   assertNotEquals(Byte unexpected, byte actual, String message)
+      AssertNotEquals.java:44   assertNotEquals(byte unexpected, byte actual, String message)
+
+    ▸ 发生了什么
+      (byte actual, String message) 这 2 个参数，在 
+      AssertEquals、Assertions、AssertNotEquals 共 3 个类的 6 
+      个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 6 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 actual、message 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  byte actual;
+                  String message;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 6 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (byte actual, Supplier<String> messageSupplier)  跨 3 个类、
+  2 个方法，共出现 6 次
+
+      AssertEquals.java:44   assertEquals(byte expected, byte actual, Supplier<String> messageSupplier)
+      Assertions.java:533   assertEquals(byte expected, byte actual, Supplier<String> messageSupplier)
+      Assertions.java:549   assertEquals(Byte expected, byte actual, Supplier<String> messageSupplier)
+      Assertions.java:1867   assertNotEquals(byte unexpected, byte actual, Supplier<String> messageSupplier)
+      Assertions.java:1894   assertNotEquals(Byte unexpected, byte actual, Supplier<String> messageSupplier)
+      AssertNotEquals.java:53   assertNotEquals(byte unexpected, byte actual, Supplier<String> messageSupplier)
+
+    ▸ 发生了什么
+      (byte actual, Supplier<String> messageSupplier) 这 2 个
+      参数，在 AssertEquals、Assertions、AssertNotEquals 共 3 
+      个类的 6 个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 6 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 actual、messageSupplier 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  byte actual;
+                  Supplier<String> messageSupplier;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 6 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (char actual, String message)  跨 3 个类、2 个方法，共出现 6
+  次
+
+      AssertEquals.java:54   assertEquals(char expected, char actual, String message)
+      Assertions.java:1122   assertEquals(char expected, char actual, String message)
+      Assertions.java:1138   assertEquals(Character expected, char actual, String message)
+      Assertions.java:2815   assertNotEquals(char unexpected, char actual, String message)
+      Assertions.java:2839   assertNotEquals(Character unexpected, char actual, String message)
+      AssertNotEquals.java:246   assertNotEquals(char unexpected, char actual, String message)
+
+    ▸ 发生了什么
+      (char actual, String message) 这 2 个参数，在 
+      AssertEquals、Assertions、AssertNotEquals 共 3 个类的 6 
+      个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 6 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 actual、message 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  char actual;
+                  String message;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 6 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (char actual, Supplier<String> messageSupplier)  跨 3 个类、
+  2 个方法，共出现 6 次
+
+      AssertEquals.java:60   assertEquals(char expected, char actual, Supplier<String> messageSupplier)
+      Assertions.java:1158   assertEquals(char expected, char actual, Supplier<String> messageSupplier)
+      Assertions.java:1175   assertEquals(Character expected, char actual, Supplier<String> messageSupplier)
+      Assertions.java:2865   assertNotEquals(char unexpected, char actual, Supplier<String> messageSupplier)
+      Assertions.java:2892   assertNotEquals(Character unexpected, char actual, Supplier<String> messageSupplier)
+      AssertNotEquals.java:255   assertNotEquals(char unexpected, char actual, Supplier<String> messageSupplier)
+
+    ▸ 发生了什么
+      (char actual, Supplier<String> messageSupplier) 这 2 个
+      参数，在 AssertEquals、Assertions、AssertNotEquals 共 3 
+      个类的 6 个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 6 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 actual、messageSupplier 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  char actual;
+                  Supplier<String> messageSupplier;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 6 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (double actual, String message)  跨 3 个类、2 个方法，共出现
+  6 次
+
+      AssertEquals.java:70   assertEquals(double expected, double actual, String message)
+      Assertions.java:974   assertEquals(double expected, double actual, String message)
+      Assertions.java:994   assertEquals(Double expected, double actual, String message)
+      Assertions.java:2618   assertNotEquals(double unexpected, double actual, String message)
+      Assertions.java:2648   assertNotEquals(Double unexpected, double actual, String message)
+      AssertNotEquals.java:195   assertNotEquals(double unexpected, double actual, String message)
+
+    ▸ 发生了什么
+      (double actual, String message) 这 2 个参数，在 
+      AssertEquals、Assertions、AssertNotEquals 共 3 个类的 6 
+      个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 6 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 actual、message 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  double actual;
+                  String message;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 6 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (double actual, Supplier<String> messageSupplier)  跨 3 个
+  类、2 个方法，共出现 6 次
+
+      AssertEquals.java:76   assertEquals(double expected, double actual, Supplier<String> messageSupplier)
+      Assertions.java:1017   assertEquals(double expected, double actual, Supplier<String> messageSupplier)
+      Assertions.java:1038   assertEquals(Double expected, double actual, Supplier<String> messageSupplier)
+      Assertions.java:2676   assertNotEquals(double unexpected, double actual, Supplier<String> messageSupplier)
+      Assertions.java:2703   assertNotEquals(Double unexpected, double actual, Supplier<String> messageSupplier)
+      AssertNotEquals.java:204   assertNotEquals(double unexpected, double actual, Supplier<String> messageSupplier)
+
+    ▸ 发生了什么
+      (double actual, Supplier<String> messageSupplier) 这 2 
+      个参数，在 AssertEquals、Assertions、AssertNotEquals 共 
+      3 个类的 6 个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 6 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 actual、messageSupplier 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  double actual;
+                  Supplier<String> messageSupplier;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 6 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (float actual, String message)  跨 3 个类、2 个方法，共出现 
+  6 次
+
+      AssertEquals.java:102   assertEquals(float expected, float actual, String message)
+      Assertions.java:816   assertEquals(float expected, float actual, String message)
+      Assertions.java:836   assertEquals(Float expected, float actual, String message)
+      Assertions.java:2406   assertNotEquals(float unexpected, float actual, String message)
+      Assertions.java:2436   assertNotEquals(Float unexpected, float actual, String message)
+      AssertNotEquals.java:144   assertNotEquals(float unexpected, float actual, String message)
+
+    ▸ 发生了什么
+      (float actual, String message) 这 2 个参数，在 
+      AssertEquals、Assertions、AssertNotEquals 共 3 个类的 6 
+      个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 6 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 actual、message 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  float actual;
+                  String message;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 6 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+  … 检查项 2 另有 42 处，未展开
+
+────────────────────────────────────────────────────────────
+  [中等] 检查项 3 · 是否用多态替代类型判断
+        违反标准：Switch Statements
+        出处：Fowler《重构》坏味道 #11
+────────────────────────────────────────────────────────────
+
+  instanceof 链 [Object[], boolean[], byte[], char[], …共 9 
+  项]  18 个类型分支
+
+      AssertArrayEquals.java:448   AssertArrayEquals.assertArrayElementsEqual()
+
+    ▸ 发生了什么
+      对 [Object[]、boolean[]、byte[]、char[]、double[] 等 9 
+      项] 的类型分派，使用了 instanceof 链。
+
+    ▸ 你在 C 里会怎么写
+      在 C 里你只能这么做：struct 里放一个 int type 字段，
+      然后 switch(type) 分派到不同的处理函数。
+      这是 C 唯一能做「同一操作、不同实现」的手段。
+
+      Java 给了你另一个手段，但你还在用 C 的那个。
+
+    ▸ 为什么是问题
+      每新增一种类型，这个判断链就要加一个分支。
+      链越长，越容易漏掉某种情况，而编译器帮不上忙。
+
+    ▸ 试试
+      让每个类型自己实现同一个方法：
+
+          interface Shape { double area(); }
+          class Circle implements Shape { public double area()
+          { … } }
+          class Rect   implements Shape { public double area()
+          { … } }
+
+      然后直接调用 shape.area()，由 Java 在运行时选择正确的实
+      现。
+      新增一种类型时，你只加一个类，一处都不用改。
+
+      这就是多态存在的全部理由 —— 它是 C 那个 switch 分派的
+      替代品，
+      不是什么高深概念。
+
+    ▸ 但要注意
+      如果分支逻辑很简单、而且类型确定不会再增加，保留 if-else
+      是可以的。
+      多态的代价是逻辑分散到多个文件，看全貌变难了。
+      判断标准：这组类型未来还会不会增加？
+
+
+────────────────────────────────────────────────────────────
+  [中等] 检查项 3 · 是否用多态替代类型判断
+        违反标准：Switch Statements
+        出处：Fowler《重构》坏味道 #11
+────────────────────────────────────────────────────────────
+
+  instanceof 链 [Iterable<?>]  2 个类型分支
+
+      AssertIterableEquals.java:102   AssertIterableEquals.assertIterableElementsEqual()
+
+    ▸ 发生了什么
+      对 [Iterable<?>] 的类型分派，使用了 instanceof 链。
+
+    ▸ 你在 C 里会怎么写
+      在 C 里你只能这么做：struct 里放一个 int type 字段，
+      然后 switch(type) 分派到不同的处理函数。
+      这是 C 唯一能做「同一操作、不同实现」的手段。
+
+      Java 给了你另一个手段，但你还在用 C 的那个。
+
+    ▸ 为什么是问题
+      每新增一种类型，这个判断链就要加一个分支。
+      链越长，越容易漏掉某种情况，而编译器帮不上忙。
+
+    ▸ 试试
+      让每个类型自己实现同一个方法：
+
+          interface Shape { double area(); }
+          class Circle implements Shape { public double area()
+          { … } }
+          class Rect   implements Shape { public double area()
+          { … } }
+
+      然后直接调用 shape.area()，由 Java 在运行时选择正确的实
+      现。
+      新增一种类型时，你只加一个类，一处都不用改。
+
+      这就是多态存在的全部理由 —— 它是 C 那个 switch 分派的
+      替代品，
+      不是什么高深概念。
+
+    ▸ 但要注意
+      如果分支逻辑很简单、而且类型确定不会再增加，保留 if-else
+      是可以的。
+      多态的代价是逻辑分散到多个文件，看全貌变难了。
+      判断标准：这组类型未来还会不会增加？
+
+
+────────────────────────────────────────────────────────────
+  [中等] 检查项 4 · static 是否被滥用
+        违反标准：全局状态破坏封装
+        出处：Java 教科书通识
+────────────────────────────────────────────────────────────
+
+  DynamicTest  —  1 个实例字段，但 10 个方法中 9 个是 static
+  （90%）
+
+      DynamicTest.java:52   class DynamicTest
+
+    ▸ 发生了什么
+      DynamicTest 的 10 个方法里有 9 个是 static（90%）。
+
+    ▸ 你在 C 里会怎么写
+      你在写一组 C 函数，只是外面套了一个 class 的壳。
+      这里的 class 只起了「命名空间」的作用，和 C 的头文件一样
+      ——
+      它没有状态，不能被实例化出多个，也谈不上什么对象。
+
+    ▸ 为什么是问题
+      static 方法之间只能靠参数传递数据。
+      所以你会看到长长的参数列表在这些方法之间来回传 ——
+      检查项 2 报出来的那些散装参数，根源往往就在这里。
+
+    ▸ 试试
+      观察这些 static 方法反复操作的是哪几个数据。
+      把那些数据变成 DynamicTest 的字段，把方法去掉 static 变
+      成实例方法。
+
+      做完你会发现参数列表大幅缩短 —— 因为数据已经在对象里
+      了。
+
+    ▸ 但要注意
+      纯工具类（数学计算、字符串处理这类无状态的）全 static 是
+      正常的，
+      本工具已按命名惯例自动排除。
+      如果这个类确实是工具类，把它改名为 XxxUtils 即可。
+
+
+════════════════════════════════════════════════════════════
+  说明
+  · 检查项 2、7 的判据本质依赖语义理解，只输出「待确认」，由你自己判断
+  · 检查项 1 的外部访问次数为启发式近似（未接入类型解析）
+════════════════════════════════════════════════════════════
