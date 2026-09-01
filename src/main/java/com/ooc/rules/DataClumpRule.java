@@ -1,6 +1,7 @@
 package com.ooc.rules;
 
 import com.ooc.ir.Ir;
+import com.ooc.report.CheckItem;
 import com.ooc.report.Finding;
 
 import java.nio.file.Paths;
@@ -8,32 +9,50 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * R1 · 参数团（Data Clump）
+ * 检查项 2 · 是否避免散装参数传递
+ * 标准：Data Clump / Long Parameter List（Fowler《重构》坏味道 #3 #4）
  *
- * 若干参数总是结伴出现，说明它们本来就属于同一个概念，应当封装成对象。
- * 这是过程式思维最外显的痕迹：数据被拆散成一堆平铺的标量到处传。
+ * 判据（v2，全部条件须同时满足，见 PREREGISTRATION-v2.md）：
+ *   C1 长度 >= 2 的连续参数子序列，类型与名称均一致
+ *   C2 出现在 >= 2 个不同的类中      <- v2 新增
+ *   C3 涉及 >= 2 个不同的方法名      <- v2 新增
+ *   C4 出现次数 >= 2
+ *   C5 非全部单字母参数名
  *
- * 阈值来自 PREREGISTRATION.md，已冻结：
- *   出现 >= dataClumpSevere 次 -> 严重
- *   出现 == 2 次              -> 中等
+ * C2 / C3 的正当性独立于样本：参数团的危害在于「同一组数据被拆散后，
+ * 跨越多个不相关的地方传递」。同一个类内部的辅助方法链共享上下文，
+ * 以及同名方法的重载家族，都不具备这个特征 —— 它们是正常甚至优秀的设计。
+ *
+ * v1 缺失 C2/C3，导致把 Guava 的 Preconditions.checkArgument（69 个手写重载）
+ * 和 JUnit5 的 AssertArrayEquals 判为坏味道，属严重误报。
  */
 public final class DataClumpRule implements Rule {
 
-    @Override public String id()   { return "R1"; }
-    @Override public String name() { return "参数团"; }
+    @Override
+    public CheckItem item() {
+        return CheckItem.PARAM_CLUMP;
+    }
 
     private static final class Occ {
-        final String klass, file, sig;
+        final String klass, klassSimple, methodName, file, sig;
         final int line;
-        Occ(String klass, String file, String sig, int line) {
-            this.klass = klass; this.file = file; this.sig = sig; this.line = line;
+
+        Occ(String klass, String klassSimple, String methodName, String file, String sig, int line) {
+            this.klass = klass;
+            this.klassSimple = klassSimple;
+            this.methodName = methodName;
+            this.file = file;
+            this.sig = sig;
+            this.line = line;
         }
-        String id() { return klass + "#" + sig + "@" + line; }
+
+        String id() {
+            return klass + "#" + sig + "@" + line;
+        }
     }
 
     @Override
     public List<Finding> apply(Ir.Project project, ScaleProfile scale) {
-        // key(参数序列) -> 出现位置（按 id 去重）
         Map<String, LinkedHashMap<String, Occ>> clumps = new LinkedHashMap<>();
 
         for (Ir.Klass k : project.classes) {
@@ -42,11 +61,13 @@ public final class DataClumpRule implements Rule {
                 if (ps.size() < 2) continue;
                 if (isExcludedMethod(m)) continue;
 
-                Occ occ = new Occ(k.qualifiedName, k.filePath, m.signature(), m.line);
+                Occ occ = new Occ(k.qualifiedName, k.name, m.name,
+                        k.filePath, m.signature(), m.line);
+
                 for (int len = 2; len <= ps.size(); len++) {
                     for (int i = 0; i + len <= ps.size(); i++) {
                         List<Ir.Param> sub = ps.subList(i, i + len);
-                        if (allSingleLetter(sub)) continue;
+                        if (allSingleLetter(sub)) continue;              // C5
                         String key = sub.stream().map(Ir.Param::key)
                                 .collect(Collectors.joining(", "));
                         clumps.computeIfAbsent(key, x -> new LinkedHashMap<>())
@@ -56,17 +77,27 @@ public final class DataClumpRule implements Rule {
             }
         }
 
-        // 只保留出现 >= 2 次的
-        List<Map.Entry<String, LinkedHashMap<String, Occ>>> candidates = clumps.entrySet().stream()
-                .filter(e -> e.getValue().size() >= 2)
-                .sorted((a, b) -> {
-                    int la = paramCount(a.getKey()), lb = paramCount(b.getKey());
-                    if (la != lb) return lb - la;                       // 参数多的优先
-                    return b.getValue().size() - a.getValue().size();   // 出现次数多的优先
-                })
-                .collect(Collectors.toList());
+        List<Map.Entry<String, LinkedHashMap<String, Occ>>> candidates = new ArrayList<>();
+        for (Map.Entry<String, LinkedHashMap<String, Occ>> e : clumps.entrySet()) {
+            Collection<Occ> occs = e.getValue().values();
+            if (occs.size() < 2) continue;                                // C4
 
-        // 去重：若一个短参数团的出现位置被某个更长的参数团完全覆盖，则它是冗余的
+            long classCount = occs.stream().map(o -> o.klass).distinct().count();
+            if (classCount < 2) continue;                                 // C2 跨类
+
+            long methodNameCount = occs.stream().map(o -> o.methodName).distinct().count();
+            if (methodNameCount < 2) continue;                            // C3 非重载
+
+            candidates.add(e);
+        }
+
+        candidates.sort((a, b) -> {
+            int la = paramCount(a.getKey()), lb = paramCount(b.getKey());
+            if (la != lb) return lb - la;
+            return b.getValue().size() - a.getValue().size();
+        });
+
+        // 短参数团若其出现位置被更长的参数团完全覆盖，则为冗余
         List<Map.Entry<String, LinkedHashMap<String, Occ>>> accepted = new ArrayList<>();
         for (Map.Entry<String, LinkedHashMap<String, Occ>> c : candidates) {
             boolean subsumed = accepted.stream()
@@ -76,35 +107,36 @@ public final class DataClumpRule implements Rule {
 
         List<Finding> findings = new ArrayList<>();
         for (Map.Entry<String, LinkedHashMap<String, Occ>> e : accepted) {
-            int count = e.getValue().size();
-            Finding.Severity sev = count >= scale.dataClumpSevere
+            Collection<Occ> occs = e.getValue().values();
+            int count = occs.size();
+
+            List<String> classNames = occs.stream().map(o -> o.klassSimple)
+                    .distinct().collect(Collectors.toList());
+            List<String> methodNames = occs.stream().map(o -> o.methodName)
+                    .distinct().collect(Collectors.toList());
+
+            Finding.Severity sev = (classNames.size() >= 3 || count >= scale.dataClumpSevere + 2)
                     ? Finding.Severity.RED : Finding.Severity.YELLOW;
 
-            Finding f = new Finding(id(), name(), sev,
-                    "(" + e.getKey() + ")  出现 " + count + " 次");
-            f.weight = count;
+            List<String> decls = Arrays.asList(e.getKey().split(", "));
+            List<String> names = decls.stream()
+                    .map(s -> s.substring(s.lastIndexOf(' ') + 1))
+                    .collect(Collectors.toList());
 
-            for (Occ o : e.getValue().values()) {
+            Finding f = new Finding(item(), sev, String.format(
+                    "(%s)  跨 %d 个类、%d 个方法，共出现 %d 次",
+                    e.getKey(), classNames.size(), methodNames.size(), count));
+            f.weight = count * 10 + classNames.size();
+
+            f.facts.put("paramDecls", decls);
+            f.facts.put("paramNames", names);
+            f.facts.put("classNames", classNames);
+            f.facts.put("methodNames", methodNames);
+            f.facts.put("occurrences", count);
+
+            for (Occ o : occs) {
                 f.locations.add(shortFile(o.file) + ":" + o.line + "   " + o.sig);
             }
-
-            String names = Arrays.stream(e.getKey().split(", "))
-                    .map(s -> s.substring(s.lastIndexOf(' ') + 1))
-                    .collect(Collectors.joining("、"));
-            int n = paramCount(e.getKey());
-
-            f.whatHappened =
-                    "这 " + n + " 个参数在 " + count + " 个方法里永远一起出现。"
-                    + "当几个数据总是结伴而行，说明它们本来就是一个东西。";
-            f.whyItMatters =
-                    "以后要给这组数据加一个新字段，你得同时改 " + count + " 处方法签名，"
-                    + "漏改一处就编译不过；而参数顺序写错时，编译器往往不会报错。";
-            f.suggestion =
-                    "把 " + names + " 封装成一个类，这 " + count + " 个方法的参数列表都会缩成 1 个。";
-            f.caveat =
-                    "如果这几个参数只是碰巧同名同类型、业务上毫无关系，那就不必封装。"
-                    + "判断标准是：它们在概念上是不是同一件事的组成部分。";
-
             findings.add(f);
         }
 
@@ -122,8 +154,7 @@ public final class DataClumpRule implements Rule {
 
     private boolean isExcludedMethod(Ir.Method m) {
         if (m.name.equals("main") && m.params.size() == 1) return true;
-        if (m.name.equals("equals") && m.params.size() == 1) return true;
-        return false;
+        return m.name.equals("equals") && m.params.size() == 1;
     }
 
     private String shortFile(String path) {

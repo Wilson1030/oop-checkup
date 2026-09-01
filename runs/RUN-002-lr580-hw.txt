@@ -1,0 +1,214 @@
+════════════════════════════════════════════════════════════
+  面向对象转换检查表
+  lr580-hw · 28 个文件 · 2490 有效行 · 29 个类型
+  规模档位：大型（> 500 有效行）— 阈值 x1.5
+════════════════════════════════════════════════════════════
+
+   ✓  1. 数据与行为是否结合                  通过
+   ✗  2. 是否避免散装参数传递                 4 处违反
+   ·  3. 是否用多态替代类型判断                未实现
+   ·  4. static 是否被滥用               未实现
+   ·  5. 封装是否完整                     未实现
+   ·  6. 类与方法的粒度                    未实现
+   ·  7. 是否避免基本类型偏执                 未实现
+
+────────────────────────────────────────────────────────────
+  ✗ 检查项 2 · 是否避免散装参数传递          [严重]
+    违反标准：Data Clump / Long Parameter List
+    出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (String ip, String port)  跨 3 个类、7 个方法，共出现 7 次
+
+      Init.java:109   update_db_settings(String ip, String port, String db, String user, String psw, String cfg)
+      Link.java:33   create_database(String ip, String port, String db, String name, String psw)
+      Link.java:41   connect(String ip, String port, String db, String name, String psw, String cfg)
+      SqlIO.java:4   get_export_head(String ip, String port, String name, String psw)
+      SqlIO.java:8   exportAll(String ip, String port, String db, String name, String psw, String path)
+      SqlIO.java:17   export(String ip, String port, String db, String name, String psw, String path, String[] dt)
+      SqlIO.java:30   importAll(String ip, String port, String db, String name, String psw, String path)
+
+    ▸ 发生了什么
+      (String ip, String port) 这 2 个参数，在 Init、Link、SqlIO
+       共 3 个类的 7 个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      你多半会定义一个 struct，把这几个字段装进去，然后传它的指
+      针。
+      因为你知道它们是一个整体 —— 拆开传又累，参数顺序还容易写
+      反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得多
+      ，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错的
+      。
+
+    ▸ 为什么是问题
+      参数顺序写反时编译器往往不报错（类型相同），要到运行时才炸
+      。
+      以后要给这组数据加一个字段，你得同时改 7 处方法签名，漏一
+      处就编译不过。
+
+    ▸ 试试
+      把它们收进一个类：
+
+          class /* 你来起个名字 */ {
+              String ip;
+              String port;
+          }
+
+      这 7 个方法的参数列表会全部缩成 1 个。
+      起名这一步很重要 —— 如果起不出名字，说明它们可能确实不是
+      一个概念。
+
+      再往前一步，这才是「面向对象」的部分：
+      既然这个新类掌握了 ip、port 的全部信息，那么 update_db_set
+      tings() 这样的方法
+      本来就该长在它身上，而不是留在外面。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操作
+      自己的函数。
+
+    ▸ 但要注意
+      如果这几个参数在业务上确实无关、只是碰巧同类型同名，那就不
+      必封装。
+      判断标准只有一条：它们是不是同一件事的组成部分。
+
+
+────────────────────────────────────────────────────────────
+  ✗ 检查项 2 · 是否避免散装参数传递          [严重]
+    违反标准：Data Clump / Long Parameter List
+    出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (String ip, String port, String db)  跨 3 个类、6 个方法，共出现 6 次
+
+      Init.java:109   update_db_settings(String ip, String port, String db, String user, String psw, String cfg)
+      Link.java:33   create_database(String ip, String port, String db, String name, String psw)
+      Link.java:41   connect(String ip, String port, String db, String name, String psw, String cfg)
+      SqlIO.java:8   exportAll(String ip, String port, String db, String name, String psw, String path)
+      SqlIO.java:17   export(String ip, String port, String db, String name, String psw, String path, String[] dt)
+      SqlIO.java:30   importAll(String ip, String port, String db, String name, String psw, String path)
+
+    ▸ 发生了什么
+      (String ip, String port, String db) 这 3 个参数，在 Init、
+      Link、SqlIO 共 3 个类的 6 个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      你多半会定义一个 struct，把这几个字段装进去，然后传它的指
+      针。
+      因为你知道它们是一个整体 —— 拆开传又累，参数顺序还容易写
+      反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得多
+      ，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错的
+      。
+
+    ▸ 为什么是问题
+      参数顺序写反时编译器往往不报错（类型相同），要到运行时才炸
+      。
+      以后要给这组数据加一个字段，你得同时改 6 处方法签名，漏一
+      处就编译不过。
+
+    ▸ 试试
+      把它们收进一个类：
+
+          class /* 你来起个名字 */ {
+              String ip;
+              String port;
+              String db;
+          }
+
+      这 6 个方法的参数列表会全部缩成 1 个。
+      起名这一步很重要 —— 如果起不出名字，说明它们可能确实不是
+      一个概念。
+
+      再往前一步，这才是「面向对象」的部分：
+      既然这个新类掌握了 ip、port、db 的全部信息，那么 update_db
+      _settings() 这样的方法
+      本来就该长在它身上，而不是留在外面。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操作
+      自己的函数。
+
+    ▸ 但要注意
+      如果这几个参数在业务上确实无关、只是碰巧同类型同名，那就不
+      必封装。
+      判断标准只有一条：它们是不是同一件事的组成部分。
+
+
+────────────────────────────────────────────────────────────
+  ✗ 检查项 2 · 是否避免散装参数传递          [中等]
+    违反标准：Data Clump / Long Parameter List
+    出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (String ip, String port, String db, String name, String psw)  跨 2 个类、5 个方法，共出现 5 次
+
+      Link.java:33   create_database(String ip, String port, String db, String name, String psw)
+      Link.java:41   connect(String ip, String port, String db, String name, String psw, String cfg)
+      SqlIO.java:8   exportAll(String ip, String port, String db, String name, String psw, String path)
+      SqlIO.java:17   export(String ip, String port, String db, String name, String psw, String path, String[] dt)
+      SqlIO.java:30   importAll(String ip, String port, String db, String name, String psw, String path)
+
+    ▸ 发生了什么
+      (String ip, String port, String db, String name, String ps
+      w) 这 5 个参数，在 Link、SqlIO 共 2 个类的 5 个方法里重复
+      出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      你多半会定义一个 struct，把这几个字段装进去，然后传它的指
+      针。
+      因为你知道它们是一个整体 —— 拆开传又累，参数顺序还容易写
+      反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得多
+      ，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错的
+      。
+
+    ▸ 为什么是问题
+      参数顺序写反时编译器往往不报错（类型相同），要到运行时才炸
+      。
+      以后要给这组数据加一个字段，你得同时改 5 处方法签名，漏一
+      处就编译不过。
+
+    ▸ 试试
+      把它们收进一个类：
+
+          class /* 你来起个名字 */ {
+              String ip;
+              String port;
+              String db;
+              String name;
+              String psw;
+          }
+
+      这 5 个方法的参数列表会全部缩成 1 个。
+      起名这一步很重要 —— 如果起不出名字，说明它们可能确实不是
+      一个概念。
+
+      再往前一步，这才是「面向对象」的部分：
+      既然这个新类掌握了 ip、port、db 等 的全部信息，那么 create
+      _database() 这样的方法
+      本来就该长在它身上，而不是留在外面。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操作
+      自己的函数。
+
+    ▸ 但要注意
+      如果这几个参数在业务上确实无关、只是碰巧同类型同名，那就不
+      必封装。
+      判断标准只有一条：它们是不是同一件事的组成部分。
+
+
+  … 本检查项另有 1 处违反，未展开
+
+════════════════════════════════════════════════════════════
+  说明：检查项 1 的「外部访问次数」为启发式近似 —— 当前未接入类型
+        解析，按成员名称匹配，同名字段分属不同类时会产生误差。
+════════════════════════════════════════════════════════════

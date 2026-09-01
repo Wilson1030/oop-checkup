@@ -4,6 +4,7 @@ import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
@@ -107,8 +108,15 @@ public final class JavaFrontend {
                     && ((ClassOrInterfaceDeclaration) td).isInterface();
             boolean isEnum = td instanceof EnumDeclaration;
             boolean isRecord = td instanceof RecordDeclaration;
+            boolean isAnnotation = td instanceof AnnotationDeclaration;
             boolean isAbstract = (td instanceof ClassOrInterfaceDeclaration)
                     && ((ClassOrInterfaceDeclaration) td).isAbstract();
+            boolean isPrivate = td.getModifiers().stream()
+                    .anyMatch(m -> m.getKeyword() == Modifier.Keyword.PRIVATE);
+            boolean isStatic = td.getModifiers().stream()
+                    .anyMatch(m -> m.getKeyword() == Modifier.Keyword.STATIC);
+            boolean isNested = td.getParentNode().isPresent()
+                    && td.getParentNode().get() instanceof TypeDeclaration;
 
             List<String> anns = td.getAnnotations().stream()
                     .map(ann -> ann.getNameAsString())
@@ -120,6 +128,7 @@ public final class JavaFrontend {
                     file,
                     line(td.getBegin()),
                     isEnum, isInterface, isAbstract, isRecord,
+                    isAnnotation, isPrivate, isNested, isStatic,
                     anns);
 
             // 只取直接成员，避免嵌套类被重复统计

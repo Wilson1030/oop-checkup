@@ -1,7 +1,10 @@
 package com.ooc;
 
+import com.ooc.explain.Explainer;
+import com.ooc.explain.TemplateExplainer;
 import com.ooc.ir.Ir;
 import com.ooc.parse.JavaFrontend;
+import com.ooc.report.CheckItem;
 import com.ooc.report.Finding;
 import com.ooc.report.TextReporter;
 import com.ooc.rules.AnemicModelRule;
@@ -18,15 +21,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
 public final class Main {
 
     private static final List<Rule> RULES = Arrays.asList(
-            new DataClumpRule(),
-            new AnemicModelRule()
+            new AnemicModelRule(),   // 检查项 1
+            new DataClumpRule()      // 检查项 2
     );
 
     public static void main(String[] args) throws Exception {
@@ -34,13 +37,15 @@ public final class Main {
                 new FileOutputStream(FileDescriptor.out), true, StandardCharsets.UTF_8);
 
         if (args.length == 0) {
+            out.println("oo-checkup —— 面向对象转换检查表");
+            out.println();
             out.println("用法: oo-checkup <路径> [选项]");
             out.println();
             out.println("选项:");
-            out.println("  --summary          只输出一行摘要（用于多样本对比）");
+            out.println("  --detail N         每个检查项最多展开 N 处违反（默认 3）");
             out.println("  --include-tests    包含测试目录（默认排除）");
-            out.println("  --detail N         每条规则最多展开 N 项（默认 3）");
-            out.println("  --batch            把 <路径> 下的每个一级子目录各当作一个样本");
+            out.println("  --summary          一行式摘要（验证用，非产品功能）");
+            out.println("  --batch            把 <路径> 下每个一级子目录各当作一个项目（验证用）");
             return;
         }
 
@@ -64,27 +69,29 @@ public final class Main {
             targets.add(root);
         }
 
-        if (summary) {
-            out.println("样本                                             有效行    类  |  R1 参数团  |  R2 贫血模型");
-            out.println("---------------------------------------------------------------------------------------------");
-        }
+        // 解释层：默认模板。未来接入 LlmExplainer 时在此替换，其余代码不动。
+        Explainer explainer = new TemplateExplainer();
 
         for (Path target : targets) {
             Ir.Project project = new JavaFrontend(includeTests).parse(target);
             ScaleProfile scale = ScaleProfile.of(project.effectiveLines);
 
-            Map<String, List<Finding>> byRule = new LinkedHashMap<>();
+            Map<CheckItem, List<Finding>> results = new EnumMap<>(CheckItem.class);
             for (Rule r : RULES) {
-                byRule.put(r.id() + " " + r.name(), r.apply(project, scale));
+                List<Finding> fs = r.apply(project, scale);
+                for (Finding f : fs) {
+                    f.explanation = explainer.explain(f);
+                }
+                results.put(r.item(), fs);
             }
 
             String label = target.getFileName() == null
                     ? target.toString() : target.getFileName().toString();
 
             if (summary) {
-                out.println(TextReporter.summaryLine(label, project, scale, byRule));
+                out.println(TextReporter.summaryLine(label, project, scale, results));
             } else {
-                new TextReporter(detail).render(out, label, project, scale, byRule);
+                new TextReporter(detail).render(out, label, project, scale, results);
             }
         }
     }

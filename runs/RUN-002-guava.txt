@@ -1,0 +1,365 @@
+════════════════════════════════════════════════════════════
+  面向对象转换检查表
+  guava · 52 个文件 · 6360 有效行 · 133 个类型
+  规模档位：大型（> 500 有效行）— 阈值 x1.5
+════════════════════════════════════════════════════════════
+
+   ✗  1. 数据与行为是否结合                  1 处违反
+   ✗  2. 是否避免散装参数传递                 61 处违反
+   ·  3. 是否用多态替代类型判断                未实现
+   ·  4. static 是否被滥用               未实现
+   ·  5. 封装是否完整                     未实现
+   ·  6. 类与方法的粒度                    未实现
+   ·  7. 是否避免基本类型偏执                 未实现
+
+────────────────────────────────────────────────────────────
+  ✗ 检查项 1 · 数据与行为是否结合          [严重]
+    违反标准：Anemic Domain Model
+    出处：Martin Fowler, AnemicDomainModel, 2003
+────────────────────────────────────────────────────────────
+
+  ValueHolder  —  3 个字段，0 个 getter/setter，0 个业务方法
+
+      MoreObjects.java:461   class ValueHolder
+          ToStringHelper  访问它 13 次
+          Joiner  访问它 4 次
+          MapJoiner  访问它 4 次
+          Enums  访问它 2 次
+          StringConverter  访问它 2 次
+
+    ▸ 发生了什么
+      ValueHolder 有 3 个字段、0 个 getter/setter，但没有任何业
+      务方法 —— 它只是一个数据容器。
+      项目里有 15 个其他类、共 38 处在读写它的数据：Converter、E
+      nums、StringConverter、ConstantFunction 等
+
+    ▸ 你在 C 里会怎么写
+      这正是 C 的写法：一个 struct 存数据，一组函数在外面操作它
+      。
+      你把 struct 改名叫 class，把那些函数搬进了另一个类，
+      但结构一点没变 —— 数据在一边，操作数据的代码在另一边。
+
+      在 C 里你别无选择，语言就只给了 struct。
+      在 Java 里你有选择，只是没用上。
+
+    ▸ 为什么是问题
+      ValueHolder 的字段含义，只有外面那些类知道。
+      哪天你改了某个字段的含义，编译器不会告诉你外部那 38 处逻辑
+      已经失效 ——
+      你只能靠自己记得。这正是 C 项目越写越难改的原因。
+
+    ▸ 试试
+      找一个只用到 ValueHolder 自己字段的方法，把它搬进 ValueHol
+      der。
+      搬完你会发现：它不再需要参数了 —— 因为数据就在手边。
+
+      这就是「对象」这个词的全部含义：数据，加上操作这些数据的函
+      数，
+      被放在同一个地方。不是「继承」，不是「多态」，就是这个。
+
+    ▸ 但要注意
+      不是所有逻辑都该搬进来。涉及多个对象协作、或依赖外部资源
+      （数据库、网络、界面）的逻辑，留在 Service 里是对的。
+      另外，如果 ValueHolder 本来就是纯粹的数据传输对象，那贫血
+      是合理设计。
+
+
+────────────────────────────────────────────────────────────
+  ✗ 检查项 2 · 是否避免散装参数传递          [严重]
+    违反标准：Data Clump / Long Parameter List
+    出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (boolean expression, String errorMessageTemplate)  跨 2 个类、3 个方法，共出现 69 次
+
+      Preconditions.java:159   checkArgument(boolean expression, String errorMessageTemplate, Object errorMessageArgs)
+      Preconditions.java:176   checkArgument(boolean expression, String errorMessageTemplate, char p1)
+      Preconditions.java:190   checkArgument(boolean expression, String errorMessageTemplate, int p1)
+      Preconditions.java:204   checkArgument(boolean expression, String errorMessageTemplate, long p1)
+      Preconditions.java:218   checkArgument(boolean expression, String errorMessageTemplate, Object p1)
+      Preconditions.java:232   checkArgument(boolean expression, String errorMessageTemplate, char p1, char p2)
+      Preconditions.java:246   checkArgument(boolean expression, String errorMessageTemplate, char p1, int p2)
+      Preconditions.java:260   checkArgument(boolean expression, String errorMessageTemplate, char p1, long p2)
+      Preconditions.java:274   checkArgument(boolean expression, String errorMessageTemplate, char p1, Object p2)
+      Preconditions.java:291   checkArgument(boolean expression, String errorMessageTemplate, int p1, char p2)
+      Preconditions.java:305   checkArgument(boolean expression, String errorMessageTemplate, int p1, int p2)
+      Preconditions.java:319   checkArgument(boolean expression, String errorMessageTemplate, int p1, long p2)
+      Preconditions.java:333   checkArgument(boolean expression, String errorMessageTemplate, int p1, Object p2)
+      Preconditions.java:350   checkArgument(boolean expression, String errorMessageTemplate, long p1, char p2)
+      Preconditions.java:364   checkArgument(boolean expression, String errorMessageTemplate, long p1, int p2)
+      Preconditions.java:378   checkArgument(boolean expression, String errorMessageTemplate, long p1, long p2)
+      Preconditions.java:392   checkArgument(boolean expression, String errorMessageTemplate, long p1, Object p2)
+      Preconditions.java:409   checkArgument(boolean expression, String errorMessageTemplate, Object p1, char p2)
+      Preconditions.java:426   checkArgument(boolean expression, String errorMessageTemplate, Object p1, int p2)
+      Preconditions.java:443   checkArgument(boolean expression, String errorMessageTemplate, Object p1, long p2)
+      Preconditions.java:460   checkArgument(boolean expression, String errorMessageTemplate, Object p1, Object p2)
+      Preconditions.java:478   checkArgument(boolean expression, String errorMessageTemplate, Object p1, Object p2, Object p3)
+      Preconditions.java:496   checkArgument(boolean expression, String errorMessageTemplate, Object p1, Object p2, Object p3, Object p4)
+      Preconditions.java:554   checkState(boolean expression, String errorMessageTemplate, Object errorMessageArgs)
+      Preconditions.java:580   checkState(boolean expression, String errorMessageTemplate, char p1)
+      Preconditions.java:595   checkState(boolean expression, String errorMessageTemplate, int p1)
+      Preconditions.java:610   checkState(boolean expression, String errorMessageTemplate, long p1)
+      Preconditions.java:625   checkState(boolean expression, String errorMessageTemplate, Object p1)
+      Preconditions.java:640   checkState(boolean expression, String errorMessageTemplate, char p1, char p2)
+      Preconditions.java:655   checkState(boolean expression, String errorMessageTemplate, char p1, int p2)
+      Preconditions.java:670   checkState(boolean expression, String errorMessageTemplate, char p1, long p2)
+      Preconditions.java:685   checkState(boolean expression, String errorMessageTemplate, char p1, Object p2)
+      Preconditions.java:703   checkState(boolean expression, String errorMessageTemplate, int p1, char p2)
+      Preconditions.java:718   checkState(boolean expression, String errorMessageTemplate, int p1, int p2)
+      Preconditions.java:733   checkState(boolean expression, String errorMessageTemplate, int p1, long p2)
+      Preconditions.java:748   checkState(boolean expression, String errorMessageTemplate, int p1, Object p2)
+      Preconditions.java:766   checkState(boolean expression, String errorMessageTemplate, long p1, char p2)
+      Preconditions.java:781   checkState(boolean expression, String errorMessageTemplate, long p1, int p2)
+      Preconditions.java:796   checkState(boolean expression, String errorMessageTemplate, long p1, long p2)
+      Preconditions.java:811   checkState(boolean expression, String errorMessageTemplate, long p1, Object p2)
+      Preconditions.java:829   checkState(boolean expression, String errorMessageTemplate, Object p1, char p2)
+      Preconditions.java:847   checkState(boolean expression, String errorMessageTemplate, Object p1, int p2)
+      Preconditions.java:865   checkState(boolean expression, String errorMessageTemplate, Object p1, long p2)
+      Preconditions.java:883   checkState(boolean expression, String errorMessageTemplate, Object p1, Object p2)
+      Preconditions.java:901   checkState(boolean expression, String errorMessageTemplate, Object p1, Object p2, Object p3)
+      Preconditions.java:920   checkState(boolean expression, String errorMessageTemplate, Object p1, Object p2, Object p3, Object p4)
+      Verify.java:119   verify(boolean expression, String errorMessageTemplate, Object errorMessageArgs)
+      Verify.java:136   verify(boolean expression, String errorMessageTemplate, char p1)
+      Verify.java:151   verify(boolean expression, String errorMessageTemplate, int p1)
+      Verify.java:166   verify(boolean expression, String errorMessageTemplate, long p1)
+      Verify.java:181   verify(boolean expression, String errorMessageTemplate, Object p1)
+      Verify.java:196   verify(boolean expression, String errorMessageTemplate, char p1, char p2)
+      Verify.java:211   verify(boolean expression, String errorMessageTemplate, int p1, char p2)
+      Verify.java:226   verify(boolean expression, String errorMessageTemplate, long p1, char p2)
+      Verify.java:241   verify(boolean expression, String errorMessageTemplate, Object p1, char p2)
+      Verify.java:259   verify(boolean expression, String errorMessageTemplate, char p1, int p2)
+      Verify.java:274   verify(boolean expression, String errorMessageTemplate, int p1, int p2)
+      Verify.java:289   verify(boolean expression, String errorMessageTemplate, long p1, int p2)
+      Verify.java:304   verify(boolean expression, String errorMessageTemplate, Object p1, int p2)
+      Verify.java:322   verify(boolean expression, String errorMessageTemplate, char p1, long p2)
+      Verify.java:337   verify(boolean expression, String errorMessageTemplate, int p1, long p2)
+      Verify.java:352   verify(boolean expression, String errorMessageTemplate, long p1, long p2)
+      Verify.java:367   verify(boolean expression, String errorMessageTemplate, Object p1, long p2)
+      Verify.java:385   verify(boolean expression, String errorMessageTemplate, char p1, Object p2)
+      Verify.java:403   verify(boolean expression, String errorMessageTemplate, int p1, Object p2)
+      Verify.java:421   verify(boolean expression, String errorMessageTemplate, long p1, Object p2)
+      Verify.java:439   verify(boolean expression, String errorMessageTemplate, Object p1, Object p2)
+      Verify.java:457   verify(boolean expression, String errorMessageTemplate, Object p1, Object p2, Object p3)
+      Verify.java:476   verify(boolean expression, String errorMessageTemplate, Object p1, Object p2, Object p3, Object p4)
+
+    ▸ 发生了什么
+      (boolean expression, String errorMessageTemplate) 这 2 个
+      参数，在 Preconditions、Verify 共 2 个类的 69 个方法里重复
+      出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      你多半会定义一个 struct，把这几个字段装进去，然后传它的指
+      针。
+      因为你知道它们是一个整体 —— 拆开传又累，参数顺序还容易写
+      反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得多
+      ，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错的
+      。
+
+    ▸ 为什么是问题
+      参数顺序写反时编译器往往不报错（类型相同），要到运行时才炸
+      。
+      以后要给这组数据加一个字段，你得同时改 69 处方法签名，漏一
+      处就编译不过。
+
+    ▸ 试试
+      把它们收进一个类：
+
+          class /* 你来起个名字 */ {
+              boolean expression;
+              String errorMessageTemplate;
+          }
+
+      这 69 个方法的参数列表会全部缩成 1 个。
+      起名这一步很重要 —— 如果起不出名字，说明它们可能确实不是
+      一个概念。
+
+      再往前一步，这才是「面向对象」的部分：
+      既然这个新类掌握了 expression、errorMessageTemplate 的全部
+      信息，那么 checkArgument() 这样的方法
+      本来就该长在它身上，而不是留在外面。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操作
+      自己的函数。
+
+    ▸ 但要注意
+      如果这几个参数在业务上确实无关、只是碰巧同类型同名，那就不
+      必封装。
+      判断标准只有一条：它们是不是同一件事的组成部分。
+
+
+────────────────────────────────────────────────────────────
+  ✗ 检查项 2 · 是否避免散装参数传递          [严重]
+    违反标准：Data Clump / Long Parameter List
+    出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (String errorMessageTemplate, Object p1)  跨 2 个类、4 个方法，共出现 28 次
+
+      Preconditions.java:218   checkArgument(boolean expression, String errorMessageTemplate, Object p1)
+      Preconditions.java:409   checkArgument(boolean expression, String errorMessageTemplate, Object p1, char p2)
+      Preconditions.java:426   checkArgument(boolean expression, String errorMessageTemplate, Object p1, int p2)
+      Preconditions.java:443   checkArgument(boolean expression, String errorMessageTemplate, Object p1, long p2)
+      Preconditions.java:460   checkArgument(boolean expression, String errorMessageTemplate, Object p1, Object p2)
+      Preconditions.java:478   checkArgument(boolean expression, String errorMessageTemplate, Object p1, Object p2, Object p3)
+      Preconditions.java:496   checkArgument(boolean expression, String errorMessageTemplate, Object p1, Object p2, Object p3, Object p4)
+      Preconditions.java:625   checkState(boolean expression, String errorMessageTemplate, Object p1)
+      Preconditions.java:829   checkState(boolean expression, String errorMessageTemplate, Object p1, char p2)
+      Preconditions.java:847   checkState(boolean expression, String errorMessageTemplate, Object p1, int p2)
+      Preconditions.java:865   checkState(boolean expression, String errorMessageTemplate, Object p1, long p2)
+      Preconditions.java:883   checkState(boolean expression, String errorMessageTemplate, Object p1, Object p2)
+      Preconditions.java:901   checkState(boolean expression, String errorMessageTemplate, Object p1, Object p2, Object p3)
+      Preconditions.java:920   checkState(boolean expression, String errorMessageTemplate, Object p1, Object p2, Object p3, Object p4)
+      Preconditions.java:1062   checkNotNull(T reference, String errorMessageTemplate, Object p1)
+      Preconditions.java:1281   checkNotNull(T reference, String errorMessageTemplate, Object p1, char p2)
+      Preconditions.java:1300   checkNotNull(T reference, String errorMessageTemplate, Object p1, int p2)
+      Preconditions.java:1319   checkNotNull(T reference, String errorMessageTemplate, Object p1, long p2)
+      Preconditions.java:1338   checkNotNull(T reference, String errorMessageTemplate, Object p1, Object p2)
+      Preconditions.java:1357   checkNotNull(T reference, String errorMessageTemplate, Object p1, Object p2, Object p3)
+      Preconditions.java:1377   checkNotNull(T reference, String errorMessageTemplate, Object p1, Object p2, Object p3, Object p4)
+      Verify.java:181   verify(boolean expression, String errorMessageTemplate, Object p1)
+      Verify.java:241   verify(boolean expression, String errorMessageTemplate, Object p1, char p2)
+      Verify.java:304   verify(boolean expression, String errorMessageTemplate, Object p1, int p2)
+      Verify.java:367   verify(boolean expression, String errorMessageTemplate, Object p1, long p2)
+      Verify.java:439   verify(boolean expression, String errorMessageTemplate, Object p1, Object p2)
+      Verify.java:457   verify(boolean expression, String errorMessageTemplate, Object p1, Object p2, Object p3)
+      Verify.java:476   verify(boolean expression, String errorMessageTemplate, Object p1, Object p2, Object p3, Object p4)
+
+    ▸ 发生了什么
+      (String errorMessageTemplate, Object p1) 这 2 个参数，在 P
+      reconditions、Verify 共 2 个类的 28 个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      你多半会定义一个 struct，把这几个字段装进去，然后传它的指
+      针。
+      因为你知道它们是一个整体 —— 拆开传又累，参数顺序还容易写
+      反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得多
+      ，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错的
+      。
+
+    ▸ 为什么是问题
+      参数顺序写反时编译器往往不报错（类型相同），要到运行时才炸
+      。
+      以后要给这组数据加一个字段，你得同时改 28 处方法签名，漏一
+      处就编译不过。
+
+    ▸ 试试
+      把它们收进一个类：
+
+          class /* 你来起个名字 */ {
+              String errorMessageTemplate;
+              Object p1;
+          }
+
+      这 28 个方法的参数列表会全部缩成 1 个。
+      起名这一步很重要 —— 如果起不出名字，说明它们可能确实不是
+      一个概念。
+
+      再往前一步，这才是「面向对象」的部分：
+      既然这个新类掌握了 errorMessageTemplate、p1 的全部信息，那
+      么 checkArgument() 这样的方法
+      本来就该长在它身上，而不是留在外面。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操作
+      自己的函数。
+
+    ▸ 但要注意
+      如果这几个参数在业务上确实无关、只是碰巧同类型同名，那就不
+      必封装。
+      判断标准只有一条：它们是不是同一件事的组成部分。
+
+
+────────────────────────────────────────────────────────────
+  ✗ 检查项 2 · 是否避免散装参数传递          [严重]
+    违反标准：Data Clump / Long Parameter List
+    出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (T reference, String errorMessageTemplate)  跨 2 个类、2 个方法，共出现 24 次
+
+      Preconditions.java:995   checkNotNull(T reference, String errorMessageTemplate, Object errorMessageArgs)
+      Preconditions.java:1014   checkNotNull(T reference, String errorMessageTemplate, char p1)
+      Preconditions.java:1030   checkNotNull(T reference, String errorMessageTemplate, int p1)
+      Preconditions.java:1046   checkNotNull(T reference, String errorMessageTemplate, long p1)
+      Preconditions.java:1062   checkNotNull(T reference, String errorMessageTemplate, Object p1)
+      Preconditions.java:1080   checkNotNull(T reference, String errorMessageTemplate, char p1, char p2)
+      Preconditions.java:1096   checkNotNull(T reference, String errorMessageTemplate, char p1, int p2)
+      Preconditions.java:1112   checkNotNull(T reference, String errorMessageTemplate, char p1, long p2)
+      Preconditions.java:1128   checkNotNull(T reference, String errorMessageTemplate, char p1, Object p2)
+      Preconditions.java:1147   checkNotNull(T reference, String errorMessageTemplate, int p1, char p2)
+      Preconditions.java:1163   checkNotNull(T reference, String errorMessageTemplate, int p1, int p2)
+      Preconditions.java:1179   checkNotNull(T reference, String errorMessageTemplate, int p1, long p2)
+      Preconditions.java:1195   checkNotNull(T reference, String errorMessageTemplate, int p1, Object p2)
+      Preconditions.java:1214   checkNotNull(T reference, String errorMessageTemplate, long p1, char p2)
+      Preconditions.java:1230   checkNotNull(T reference, String errorMessageTemplate, long p1, int p2)
+      Preconditions.java:1246   checkNotNull(T reference, String errorMessageTemplate, long p1, long p2)
+      Preconditions.java:1262   checkNotNull(T reference, String errorMessageTemplate, long p1, Object p2)
+      Preconditions.java:1281   checkNotNull(T reference, String errorMessageTemplate, Object p1, char p2)
+      Preconditions.java:1300   checkNotNull(T reference, String errorMessageTemplate, Object p1, int p2)
+      Preconditions.java:1319   checkNotNull(T reference, String errorMessageTemplate, Object p1, long p2)
+      Preconditions.java:1338   checkNotNull(T reference, String errorMessageTemplate, Object p1, Object p2)
+      Preconditions.java:1357   checkNotNull(T reference, String errorMessageTemplate, Object p1, Object p2, Object p3)
+      Preconditions.java:1377   checkNotNull(T reference, String errorMessageTemplate, Object p1, Object p2, Object p3, Object p4)
+      Verify.java:525   verifyNotNull(T reference, String errorMessageTemplate, Object errorMessageArgs)
+
+    ▸ 发生了什么
+      (T reference, String errorMessageTemplate) 这 2 个参数，在
+       Preconditions、Verify 共 2 个类的 24 个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      你多半会定义一个 struct，把这几个字段装进去，然后传它的指
+      针。
+      因为你知道它们是一个整体 —— 拆开传又累，参数顺序还容易写
+      反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得多
+      ，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错的
+      。
+
+    ▸ 为什么是问题
+      参数顺序写反时编译器往往不报错（类型相同），要到运行时才炸
+      。
+      以后要给这组数据加一个字段，你得同时改 24 处方法签名，漏一
+      处就编译不过。
+
+    ▸ 试试
+      把它们收进一个类：
+
+          class /* 你来起个名字 */ {
+              T reference;
+              String errorMessageTemplate;
+          }
+
+      这 24 个方法的参数列表会全部缩成 1 个。
+      起名这一步很重要 —— 如果起不出名字，说明它们可能确实不是
+      一个概念。
+
+      再往前一步，这才是「面向对象」的部分：
+      既然这个新类掌握了 reference、errorMessageTemplate 的全部
+      信息，那么 checkNotNull() 这样的方法
+      本来就该长在它身上，而不是留在外面。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操作
+      自己的函数。
+
+    ▸ 但要注意
+      如果这几个参数在业务上确实无关、只是碰巧同类型同名，那就不
+      必封装。
+      判断标准只有一条：它们是不是同一件事的组成部分。
+
+
+  … 本检查项另有 58 处违反，未展开
+
+════════════════════════════════════════════════════════════
+  说明：检查项 1 的「外部访问次数」为启发式近似 —— 当前未接入类型
+        解析，按成员名称匹配，同名字段分属不同类时会产生误差。
+════════════════════════════════════════════════════════════

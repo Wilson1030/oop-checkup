@@ -1,6 +1,7 @@
 package com.ooc.rules;
 
 import com.ooc.ir.Ir;
+import com.ooc.report.CheckItem;
 import com.ooc.report.Finding;
 
 import java.nio.file.Paths;
@@ -8,19 +9,25 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * R2 · 贫血模型（Anemic Domain Model）
+ * 检查项 1 · 数据与行为是否结合
+ * 标准：Anemic Domain Model（Martin Fowler, 2003）
  *
- * 一个类只有字段和 getter/setter、没有任何行为，
- * 而操作这些字段的逻辑全都散落在别的类里 ——
- * 这就是把类当成 C 的 struct、把 Service 当成一组 C 函数。
- * 数据与行为分离，正是过程式思维最本质的残留。
+ * 一个类只有字段和 getter/setter、没有任何行为，而操作这些字段的逻辑
+ * 全部散落在别的类里 —— 这就是把类当成 C 的 struct、把 Service 当成
+ * 一组 C 函数。数据与行为分离，是过程式思维最本质的残留。
  *
- * 阈值来自 PREREGISTRATION.md，已冻结。
+ * v2 新增两条排除（属修正客观错误，非放宽阈值）：
+ *   E1 @interface 注解声明 —— 注解不是类，没有行为是其语言定义。
+ *      RUN-001 中 JUnit5 的 TempDir / RepeatedTest / Timeout 三项误报皆属此。
+ *   E2 private static 嵌套类 —— 内部数据节点贫血是刻意设计。
+ *      RUN-001 中 Guava 的 MoreObjects.ValueHolder 属此。
  */
 public final class AnemicModelRule implements Rule {
 
-    @Override public String id()   { return "R2"; }
-    @Override public String name() { return "贫血模型"; }
+    @Override
+    public CheckItem item() {
+        return CheckItem.DATA_BEHAVIOR;
+    }
 
     private static final Set<String> STANDARD_METHODS =
             new HashSet<>(Arrays.asList("toString", "equals", "hashCode", "compareTo", "clone"));
@@ -37,6 +44,8 @@ public final class AnemicModelRule implements Rule {
 
         for (Ir.Klass k : project.classes) {
             if (k.isEnum || k.isInterface || k.isAbstract || k.isRecord) continue;
+            if (k.isAnnotation) continue;                        // E1
+            if (k.isNested && k.isPrivate && k.isStatic) continue; // E2
             if (nameExcluded(k.name)) continue;
             if (k.annotations.stream().anyMatch(EXCLUDED_ANNOTATIONS::contains)) continue;
 
@@ -50,7 +59,6 @@ public final class AnemicModelRule implements Rule {
                     .count();
             if (business > 0) continue;
 
-            // 统计外部访问
             Set<String> members = memberNames(inst);
             Map<String, Integer> byClass = new LinkedHashMap<>();
             int total = 0;
@@ -66,39 +74,27 @@ public final class AnemicModelRule implements Rule {
 
             long accessors = k.methods.stream().filter(this::isAccessor).count();
 
-            Finding f = new Finding(id(), name(), sev,
-                    k.name + "  —  " + inst.size() + " 个字段，"
-                            + accessors + " 个 getter/setter，0 个业务方法");
+            Finding f = new Finding(item(), sev, String.format(
+                    "%s  —  %d 个字段，%d 个 getter/setter，0 个业务方法",
+                    k.name, inst.size(), accessors));
             f.weight = total;
-            f.locations.add(shortFile(k.filePath) + ":" + k.line + "   class " + k.name);
 
             List<Map.Entry<String, Integer>> top = byClass.entrySet().stream()
                     .sorted((a, b) -> b.getValue() - a.getValue())
                     .limit(5)
                     .collect(Collectors.toList());
+
+            f.facts.put("className", k.name);
+            f.facts.put("fieldCount", inst.size());
+            f.facts.put("accessorCount", (int) accessors);
+            f.facts.put("externalAccess", total);
+            f.facts.put("externalClasses", byClass.keySet().stream()
+                    .map(this::simple).collect(Collectors.toList()));
+
+            f.locations.add(shortFile(k.filePath) + ":" + k.line + "   class " + k.name);
             for (Map.Entry<String, Integer> e : top) {
                 f.locations.add("    " + simple(e.getKey()) + "  访问它 " + e.getValue() + " 次");
             }
-
-            f.whatHappened =
-                    k.name + " 有 " + inst.size() + " 个字段，却没有任何业务方法 —— "
-                    + "它只是一个数据容器。"
-                    + (total > 0
-                        ? "而项目里有 " + byClass.size() + " 个其他类、共 " + total
-                          + " 处在读写它的数据。"
-                        : "");
-            f.whyItMatters =
-                    "数据在一个地方，操作数据的代码在另一个地方。"
-                    + k.name + " 的字段含义只有外部那些类知道；"
-                    + "哪天你改了字段，编译器不会告诉你外部哪些逻辑已经失效了。";
-            f.suggestion =
-                    "找一个只用到 " + k.name + " 自己字段的方法，把它搬进 " + k.name + "。"
-                    + "搬完你会发现它不再需要参数了 —— 因为数据就在手边。这就是「对象」的意思。";
-            f.caveat =
-                    "不是所有逻辑都该搬进来。涉及多个对象协作、或依赖外部资源（数据库、网络、UI）的逻辑，"
-                    + "留在 Service 里是对的。另外，如果 " + k.name
-                    + " 本来就是纯粹的数据传输对象，那贫血是合理的。";
-
             findings.add(f);
         }
 
@@ -106,7 +102,6 @@ public final class AnemicModelRule implements Rule {
         return findings;
     }
 
-    /** 字段名 + 其对应的 getter/setter 名 */
     private Set<String> memberNames(List<Ir.Field> fields) {
         Set<String> s = new HashSet<>();
         for (Ir.Field f : fields) {

@@ -1,15 +1,22 @@
 package com.ooc.report;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
-/** 一条检测发现 */
+/**
+ * 一条检测发现。
+ *
+ * 「是什么 / 在哪 / 违反哪条标准 / 事实」由规则引擎确定性产出，
+ * LLM 永远不得增删或改写这部分 —— 否则会幻觉出不存在的问题，信任立刻崩塌。
+ * 只有 explanation 字段可以被 LLM 增强。
+ */
 public final class Finding {
 
     public enum Severity {
-        RED("[严重]"),
-        YELLOW("[中等]"),
-        GREEN("[通过]");
+        RED("严重"),
+        YELLOW("中等");
 
         public final String label;
 
@@ -18,30 +25,29 @@ public final class Finding {
         }
     }
 
-    /** 规则编号，如 R1 */
-    public final String ruleId;
-    /** 规则名，如 参数团 */
-    public final String ruleName;
+    public final CheckItem item;
     public final Severity severity;
-    /** 一行摘要 */
+    /** 一行摘要（客观事实） */
     public final String title;
     /** 代码位置清单 */
     public final List<String> locations = new ArrayList<>();
-    /** 发生了什么 */
-    public String whatHappened = "";
-    /** 为什么是问题 */
-    public String whyItMatters = "";
-    /** 试试 */
-    public String suggestion = "";
-    /** 但要注意 —— 防止学生矫枉过正 */
-    public String caveat = "";
-    /** 该发现涉及的重复次数 / 数量，用于排序与统计 */
+    /** 结构化事实，供 Explainer 填槽使用 */
+    public final Map<String, Object> facts = new LinkedHashMap<>();
+    /** 排序权重 */
     public int weight;
 
-    public Finding(String ruleId, String ruleName, Severity severity, String title) {
-        this.ruleId = ruleId;
-        this.ruleName = ruleName;
+    /** 由 Explainer 填充，规则引擎不写这里 */
+    public Explanation explanation;
+
+    public Finding(CheckItem item, Severity severity, String title) {
+        this.item = item;
         this.severity = severity;
         this.title = title;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T fact(String key, T def) {
+        Object v = facts.get(key);
+        return v == null ? def : (T) v;
     }
 }

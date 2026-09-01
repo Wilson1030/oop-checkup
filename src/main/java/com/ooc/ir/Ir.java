@@ -93,12 +93,18 @@ public final class Ir {
         public final boolean isInterface;
         public final boolean isAbstract;
         public final boolean isRecord;
+        /** @interface 注解声明 —— 不是类，没有行为是其语言定义 */
+        public final boolean isAnnotation;
+        public final boolean isPrivate;
+        public final boolean isNested;
+        public final boolean isStatic;
         public final List<String> annotations;
         public final List<Field> fields = new ArrayList<>();
         public final List<Method> methods = new ArrayList<>();
 
         public Klass(String name, String qualifiedName, String filePath, int line,
                      boolean isEnum, boolean isInterface, boolean isAbstract, boolean isRecord,
+                     boolean isAnnotation, boolean isPrivate, boolean isNested, boolean isStatic,
                      List<String> annotations) {
             this.name = name;
             this.qualifiedName = qualifiedName;
@@ -108,6 +114,10 @@ public final class Ir {
             this.isInterface = isInterface;
             this.isAbstract = isAbstract;
             this.isRecord = isRecord;
+            this.isAnnotation = isAnnotation;
+            this.isPrivate = isPrivate;
+            this.isNested = isNested;
+            this.isStatic = isStatic;
             this.annotations = annotations;
         }
 
