@@ -9,8 +9,12 @@ import com.ooc.report.Finding;
 import com.ooc.report.TextReporter;
 import com.ooc.rules.AnemicModelRule;
 import com.ooc.rules.DataClumpRule;
+import com.ooc.rules.EncapsulationRule;
+import com.ooc.rules.MainBloatRule;
+import com.ooc.rules.PolymorphismRule;
 import com.ooc.rules.Rule;
 import com.ooc.rules.ScaleProfile;
+import com.ooc.rules.StaticAbuseRule;
 
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
@@ -29,7 +33,11 @@ public final class Main {
 
     private static final List<Rule> RULES = Arrays.asList(
             new AnemicModelRule(),   // 检查项 1
-            new DataClumpRule()      // 检查项 2
+            new DataClumpRule(),     // 检查项 2（待确认）
+            new PolymorphismRule(),  // 检查项 3
+            new StaticAbuseRule(),   // 检查项 4
+            new EncapsulationRule(), // 检查项 5
+            new MainBloatRule()      // 检查项 6
     );
 
     public static void main(String[] args) throws Exception {

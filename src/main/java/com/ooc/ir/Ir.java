@@ -96,6 +96,7 @@ public final class Ir {
         /** @interface 注解声明 —— 不是类，没有行为是其语言定义 */
         public final boolean isAnnotation;
         public final boolean isPrivate;
+        public final boolean isPublic;
         public final boolean isNested;
         public final boolean isStatic;
         public final List<String> annotations;
@@ -104,7 +105,8 @@ public final class Ir {
 
         public Klass(String name, String qualifiedName, String filePath, int line,
                      boolean isEnum, boolean isInterface, boolean isAbstract, boolean isRecord,
-                     boolean isAnnotation, boolean isPrivate, boolean isNested, boolean isStatic,
+                     boolean isAnnotation, boolean isPrivate, boolean isPublic,
+                     boolean isNested, boolean isStatic,
                      List<String> annotations) {
             this.name = name;
             this.qualifiedName = qualifiedName;
@@ -116,6 +118,7 @@ public final class Ir {
             this.isRecord = isRecord;
             this.isAnnotation = isAnnotation;
             this.isPrivate = isPrivate;
+            this.isPublic = isPublic;
             this.isNested = isNested;
             this.isStatic = isStatic;
             this.annotations = annotations;
@@ -145,10 +148,42 @@ public final class Ir {
         }
     }
 
+    /**
+     * 一处基于类型的条件分派（instanceof 链 或 switch）。
+     *
+     * signature 是排序后的类型/标签集合，用于检测「同一组类型判断在多处重复」
+     * —— 重复才是 Fowler 所说的真正痛点：新增一个类型要同时改多处。
+     */
+    public static final class TypeCheck {
+        public enum Kind { INSTANCEOF_CHAIN, SWITCH }
+
+        public final Kind kind;
+        public final String signature;
+        public final int branches;
+        public final int line;
+        public final String method;
+        public final String klass;
+        public final String klassSimple;
+        public final String file;
+
+        public TypeCheck(Kind kind, String signature, int branches, int line,
+                         String method, String klass, String klassSimple, String file) {
+            this.kind = kind;
+            this.signature = signature;
+            this.branches = branches;
+            this.line = line;
+            this.method = method;
+            this.klass = klass;
+            this.klassSimple = klassSimple;
+            this.file = file;
+        }
+    }
+
     /** 整个被分析项目 */
     public static final class Project {
         public final List<Klass> classes = new ArrayList<>();
         public final List<Access> accesses = new ArrayList<>();
+        public final List<TypeCheck> typeChecks = new ArrayList<>();
         public int effectiveLines;
         public int fileCount;
         public int parseFailures;

@@ -7,18 +7,25 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.expr.FieldAccessExpr;
+import com.github.javaparser.ast.expr.InstanceOfExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.SuperExpr;
 import com.github.javaparser.ast.expr.ThisExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.IfStmt;
+import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.stmt.SwitchStmt;
 import com.ooc.ir.Ir;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -113,6 +120,8 @@ public final class JavaFrontend {
                     && ((ClassOrInterfaceDeclaration) td).isAbstract();
             boolean isPrivate = td.getModifiers().stream()
                     .anyMatch(m -> m.getKeyword() == Modifier.Keyword.PRIVATE);
+            boolean isPublic = td.getModifiers().stream()
+                    .anyMatch(m -> m.getKeyword() == Modifier.Keyword.PUBLIC);
             boolean isStatic = td.getModifiers().stream()
                     .anyMatch(m -> m.getKeyword() == Modifier.Keyword.STATIC);
             boolean isNested = td.getParentNode().isPresent()
@@ -128,7 +137,7 @@ public final class JavaFrontend {
                     file,
                     line(td.getBegin()),
                     isEnum, isInterface, isAbstract, isRecord,
-                    isAnnotation, isPrivate, isNested, isStatic,
+                    isAnnotation, isPrivate, isPublic, isNested, isStatic,
                     anns);
 
             // 只取直接成员，避免嵌套类被重复统计
@@ -151,6 +160,8 @@ public final class JavaFrontend {
                             bodyLines(md.getBody()),
                             line(md.getBegin())));
                     md.getBody().ifPresent(b -> scanAccesses(b, k.qualifiedName, project));
+                    md.getBody().ifPresent(b -> scanTypeChecks(
+                            b, md.getNameAsString(), k, file, project));
                 } else if (member instanceof ConstructorDeclaration) {
                     ConstructorDeclaration cd = (ConstructorDeclaration) member;
                     k.methods.add(new Ir.Method(
@@ -185,6 +196,59 @@ public final class JavaFrontend {
         for (FieldAccessExpr fa : body.findAll(FieldAccessExpr.class)) {
             if (hasExternalScope(fa.getScope())) {
                 project.accesses.add(new Ir.Access(fromClass, fa.getNameAsString(), false));
+            }
+        }
+    }
+
+    /**
+     * 采集基于类型的条件分派。
+     * 排除 equals() 内的 instanceof —— 那是 Java 规范要求的标准写法。
+     */
+    private void scanTypeChecks(BlockStmt body, String methodName, Ir.Klass k,
+                                String file, Ir.Project project) {
+        if (!methodName.equals("equals")) {
+            List<IfStmt> all = body.findAll(IfStmt.class);
+            Set<IfStmt> asElse = new HashSet<>();
+            for (IfStmt s : all) {
+                Statement e = s.getElseStmt().orElse(null);
+                if (e instanceof IfStmt) asElse.add((IfStmt) e);
+            }
+            for (IfStmt head : all) {
+                if (asElse.contains(head)) continue;              // 只处理链头
+                List<String> types = new ArrayList<>();
+                IfStmt cur = head;
+                while (cur != null) {
+                    for (InstanceOfExpr io : cur.getCondition().findAll(InstanceOfExpr.class)) {
+                        types.add(io.getType().asString());
+                    }
+                    Statement els = cur.getElseStmt().orElse(null);
+                    cur = (els instanceof IfStmt) ? (IfStmt) els : null;
+                }
+                if (types.size() >= 2) {
+                    Set<String> sorted = new TreeSet<>(types);
+                    project.typeChecks.add(new Ir.TypeCheck(
+                            Ir.TypeCheck.Kind.INSTANCEOF_CHAIN,
+                            String.join(",", sorted), types.size(),
+                            line(head.getBegin()), methodName,
+                            k.qualifiedName, k.name, file));
+                }
+            }
+        }
+
+        for (SwitchStmt sw : body.findAll(SwitchStmt.class)) {
+            Set<String> labels = new TreeSet<>();
+            int branches = 0;
+            for (com.github.javaparser.ast.stmt.SwitchEntry entry : sw.getEntries()) {
+                if (entry.getLabels().isEmpty()) continue;        // default 不计
+                branches++;
+                entry.getLabels().forEach(l -> labels.add(l.toString()));
+            }
+            if (branches >= 2) {
+                project.typeChecks.add(new Ir.TypeCheck(
+                        Ir.TypeCheck.Kind.SWITCH,
+                        String.join(",", labels), branches,
+                        line(sw.getBegin()), methodName,
+                        k.qualifiedName, k.name, file));
             }
         }
     }

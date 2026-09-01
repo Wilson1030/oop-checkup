@@ -19,8 +19,10 @@ import java.util.stream.Collectors;
  * v2 新增两条排除（属修正客观错误，非放宽阈值）：
  *   E1 @interface 注解声明 —— 注解不是类，没有行为是其语言定义。
  *      RUN-001 中 JUnit5 的 TempDir / RepeatedTest / Timeout 三项误报皆属此。
- *   E2 private static 嵌套类 —— 内部数据节点贫血是刻意设计。
+ *   E2 非 public 的 static 嵌套类 —— 内部数据节点贫血是刻意设计。
  *      RUN-001 中 Guava 的 MoreObjects.ValueHolder 属此。
+ *      （v2 误写为 private static，实际该类是包私有 static class；
+ *        已在 RUN-002 分析中留痕，v3 修正）
  */
 public final class AnemicModelRule implements Rule {
 
@@ -44,8 +46,8 @@ public final class AnemicModelRule implements Rule {
 
         for (Ir.Klass k : project.classes) {
             if (k.isEnum || k.isInterface || k.isAbstract || k.isRecord) continue;
-            if (k.isAnnotation) continue;                        // E1
-            if (k.isNested && k.isPrivate && k.isStatic) continue; // E2
+            if (k.isAnnotation) continue;                              // E1
+            if (k.isNested && k.isStatic && !k.isPublic) continue;      // E2
             if (nameExcluded(k.name)) continue;
             if (k.annotations.stream().anyMatch(EXCLUDED_ANNOTATIONS::contains)) continue;
 

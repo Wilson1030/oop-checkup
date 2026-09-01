@@ -23,8 +23,13 @@ import java.util.stream.Collectors;
  * 跨越多个不相关的地方传递」。同一个类内部的辅助方法链共享上下文，
  * 以及同名方法的重载家族，都不具备这个特征 —— 它们是正常甚至优秀的设计。
  *
- * v1 缺失 C2/C3，导致把 Guava 的 Preconditions.checkArgument（69 个手写重载）
- * 和 JUnit5 的 AssertArrayEquals 判为坏味道，属严重误报。
+ * RUN-002 证明：本规则的判据本质上是**语义性**的 ——
+ * 真正的判据是「这组参数能否命名一个有意义的概念」，
+ * 而这无法从语法结构推导（同样的语法形态，语义上可能是也可能不是）。
+ *
+ * 因此本规则不断言「违反」，只输出「待确认」，把判断权交还学生。
+ * 这不是逃避 —— 教学上反而更好：起名这个动作本身就是在逼学生判断
+ * 「这几个东西是不是同一个概念」，那正是我们希望他学会的思考。
  */
 public final class DataClumpRule implements Rule {
 
@@ -115,8 +120,7 @@ public final class DataClumpRule implements Rule {
             List<String> methodNames = occs.stream().map(o -> o.methodName)
                     .distinct().collect(Collectors.toList());
 
-            Finding.Severity sev = (classNames.size() >= 3 || count >= scale.dataClumpSevere + 2)
-                    ? Finding.Severity.RED : Finding.Severity.YELLOW;
+            Finding.Severity sev = Finding.Severity.UNCONFIRMED;
 
             List<String> decls = Arrays.asList(e.getKey().split(", "));
             List<String> names = decls.stream()

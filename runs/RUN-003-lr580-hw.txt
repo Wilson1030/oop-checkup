@@ -1,0 +1,573 @@
+════════════════════════════════════════════════════════════
+  面向对象转换检查表
+  lr580-hw · 28 个文件 · 2490 有效行 · 29 个类型
+  规模档位：大型（> 500 有效行）— 阈值 x1.5
+════════════════════════════════════════════════════════════
+
+  1. 数据与行为是否结合 .......... 通过
+  2. 是否避免散装参数传递 ........ 4 处待确认
+  3. 是否用多态替代类型判断 ...... 通过
+  4. static 是否被滥用 ........... 15 处违反
+  5. 封装是否完整 ................ 3 处违反
+  6. 入口方法是否过度承担 ........ 通过
+  7. 是否避免基本类型偏执 ........ 未实现
+
+  违反 2 项，待确认 1 项
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (String ip, String port)  跨 3 个类、7 个方法，共出现 7 次
+
+      Init.java:109   update_db_settings(String ip, String port, String db, String user, String psw, String cfg)
+      Link.java:33   create_database(String ip, String port, String db, String name, String psw)
+      Link.java:41   connect(String ip, String port, String db, String name, String psw, String cfg)
+      SqlIO.java:4   get_export_head(String ip, String port, String name, String psw)
+      SqlIO.java:8   exportAll(String ip, String port, String db, String name, String psw, String path)
+      SqlIO.java:17   export(String ip, String port, String db, String name, String psw, String path, String[] dt)
+      SqlIO.java:30   importAll(String ip, String port, String db, String name, String psw, String path)
+
+    ▸ 发生了什么
+      (String ip, String port) 这 2 个参数，在 Init、Link、
+      SqlIO 共 3 个类的 7 个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 7 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 ip、port 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  String ip;
+                  String port;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 7 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (String ip, String port, String db)  跨 3 个类、6 个方法，共
+  出现 6 次
+
+      Init.java:109   update_db_settings(String ip, String port, String db, String user, String psw, String cfg)
+      Link.java:33   create_database(String ip, String port, String db, String name, String psw)
+      Link.java:41   connect(String ip, String port, String db, String name, String psw, String cfg)
+      SqlIO.java:8   exportAll(String ip, String port, String db, String name, String psw, String path)
+      SqlIO.java:17   export(String ip, String port, String db, String name, String psw, String path, String[] dt)
+      SqlIO.java:30   importAll(String ip, String port, String db, String name, String psw, String path)
+
+    ▸ 发生了什么
+      (String ip, String port, String db) 这 3 个参数，在 
+      Init、Link、SqlIO 共 3 个类的 6 个方法里重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 6 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 ip、port、db 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  String ip;
+                  String port;
+                  String db;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 6 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+────────────────────────────────────────────────────────────
+  [待确认] 检查项 2 · 是否避免散装参数传递
+        关联标准：Data Clump / Long Parameter List
+        出处：Fowler《重构》坏味道 #3 #4
+────────────────────────────────────────────────────────────
+
+  (String ip, String port, String db, String name, String psw)
+   跨 2 个类、5 个方法，共出现 5 次
+
+      Link.java:33   create_database(String ip, String port, String db, String name, String psw)
+      Link.java:41   connect(String ip, String port, String db, String name, String psw, String cfg)
+      SqlIO.java:8   exportAll(String ip, String port, String db, String name, String psw, String path)
+      SqlIO.java:17   export(String ip, String port, String db, String name, String psw, String path, String[] dt)
+      SqlIO.java:30   importAll(String ip, String port, String db, String name, String psw, String path)
+
+    ▸ 发生了什么
+      (String ip, String port, String db, String name, String 
+      psw) 这 5 个参数，在 Link、SqlIO 共 2 个类的 5 个方法里
+      重复出现。
+
+    ▸ 你在 C 里会怎么写
+      你在 C 里遇到这种情况会怎么写？
+      如果这几个东西是一个整体，你多半会定义一个 struct，然后
+      传指针 ——
+      因为拆开传又累，参数顺序还容易写反。
+
+      那你为什么在 Java 里没这么做？
+      多半是因为「定义一个类」看起来比「定义一个 struct」重得
+      多，
+      而你被教成「类是很严肃的东西，不能随便建」。这个观念是错
+      的。
+
+    ▸ 为什么是问题
+      如果它们确实是一个整体：参数顺序写反时编译器往往不报错（
+      类型相同），
+      要到运行时才炸；以后加一个字段，你得同时改 5 处方法签
+      名。
+
+    ▸ 怎么判断
+      这一条需要你自己判断 —— 请回答一个问题：
+
+          你能给 ip、port、db、name 等 5 项 起一个名字吗？
+
+          起得出来  →  它们就该是一个类：
+
+              class /* 你起的那个名字 */ {
+                  String ip;
+                  String port;
+                  String db;
+                  String name;
+                  String psw;
+              }
+
+          起不出来  →  忽略本条，它们只是碰巧同名。
+
+      如果起出来了，再往前一步 —— 这才是「面向对象」的部分：
+      既然这个新类掌握了全部信息，那么操作这些数据的方法
+      本来就该长在它身上，而不是留在那 5 个地方。
+      C 的 struct 和 Java 的对象，唯一的区别就是：对象能带上操
+      作自己的函数。
+
+    ▸ 但要注意
+      本条为「待确认」而非「违反」，因为「这几个参数是不是同一
+      个概念」
+      无法由代码结构判断，只能由写代码的人判断。
+      而做这个判断的过程，恰恰就是面向对象设计本身。
+
+
+  … 检查项 2 另有 1 处，未展开
+
+────────────────────────────────────────────────────────────
+  [中等] 检查项 4 · static 是否被滥用
+        违反标准：全局状态破坏封装
+        出处：Java 教科书通识
+────────────────────────────────────────────────────────────
+
+  DbCtrl  —  17 个 static 非 final 字段（全局变量）
+
+      DbCtrl.java:10   class DbCtrl
+          static StringBuilder diary
+          static PreparedStatement s_add_stu
+          static PreparedStatement s_add_sub
+          static PreparedStatement s_add_sco
+          static PreparedStatement s_upd_stu
+          static PreparedStatement s_upd_sub
+          static PreparedStatement s_upd_sco
+          static PreparedStatement s_del_stu
+          static PreparedStatement s_del_sub
+          static PreparedStatement s_del_sco
+          static PreparedStatement s_sea_stu
+          static PreparedStatement s_sea_sub
+          static PreparedStatement s_sea_sco
+          static PreparedStatement s_stuname2id
+          static PreparedStatement s_subname2id
+          static File f_dir
+          static File f_log
+
+    ▸ 发生了什么
+      DbCtrl 里有 17 个 static 且非 final 的字段：
+          static StringBuilder diary
+          static PreparedStatement s_add_stu
+          static PreparedStatement s_add_sub
+          static PreparedStatement s_add_sco
+          static PreparedStatement s_upd_stu
+          static PreparedStatement s_upd_sub
+          static PreparedStatement s_upd_sco
+          static PreparedStatement s_del_stu
+          static PreparedStatement s_del_sub
+          static PreparedStatement s_del_sco
+          static PreparedStatement s_sea_stu
+          static PreparedStatement s_sea_sub
+          static PreparedStatement s_sea_sco
+          static PreparedStatement s_stuname2id
+          static PreparedStatement s_subname2id
+          static File f_dir
+          static File f_log
+
+    ▸ 你在 C 里会怎么写
+      这就是 C 的全局变量。
+      你在 C 里写  int g_count;
+      在 Java 里写  static int count;
+      语义上是同一个东西 —— 一块所有代码都能读写的内存。
+
+    ▸ 为什么是问题
+      任何一处代码都能改它，出问题时你无法知道是谁在什么时候改
+      的。
+      调试这类 bug 只能靠通读全部代码。
+      如果程序有多线程，它还会直接导致数据竞争。
+
+    ▸ 试试
+      问自己一个问题：这个状态属于谁？
+
+          属于某个具体的东西  →  变成那个对象的实例字段
+          属于整个程序        →  也应该有一个对象来持有它，
+                                  并且只通过方法访问
+
+      把 DbCtrl 的这些字段改成实例字段，然后把 DbCtrl 变成一个
+      正常的对象。
+
+    ▸ 但要注意
+      常量（static final）不在此列，那是正常且推荐的。
+      真正需要全局唯一的资源（连接池、配置），可以用单例，
+      但要把访问收敛到方法里，而不是直接暴露字段。
+
+
+────────────────────────────────────────────────────────────
+  [严重] 检查项 4 · static 是否被滥用
+        违反标准：全局状态破坏封装
+        出处：Java 教科书通识
+────────────────────────────────────────────────────────────
+
+  TbGlobal  —  11 个 static 非 final 字段（全局变量）
+
+      TbGlobal.java:11   class TbGlobal
+          public static DbTable jt
+          public static JComboBox<String> jc
+          static javax.swing.filechooser.FileFilter flits
+          public static ActionListener e_save
+          public static ActionListener e_undo
+          public static ActionListener e_backup
+          public static ActionListener e_frombackup
+          public static ActionListener e_delbackup
+          public static ActionListener e_importall
+          public static ActionListener e_exportall
+          public static ActionListener e_export
+
+    ▸ 发生了什么
+      TbGlobal 里有 11 个 static 且非 final 的字段：
+          public static DbTable jt
+          public static JComboBox<String> jc
+          static javax.swing.filechooser.FileFilter flits
+          public static ActionListener e_save
+          public static ActionListener e_undo
+          public static ActionListener e_backup
+          public static ActionListener e_frombackup
+          public static ActionListener e_delbackup
+          public static ActionListener e_importall
+          public static ActionListener e_exportall
+          public static ActionListener e_export
+
+    ▸ 你在 C 里会怎么写
+      这就是 C 的全局变量。
+      你在 C 里写  int g_count;
+      在 Java 里写  static int count;
+      语义上是同一个东西 —— 一块所有代码都能读写的内存。
+
+    ▸ 为什么是问题
+      任何一处代码都能改它，出问题时你无法知道是谁在什么时候改
+      的。
+      调试这类 bug 只能靠通读全部代码。
+      如果程序有多线程，它还会直接导致数据竞争。
+
+    ▸ 试试
+      问自己一个问题：这个状态属于谁？
+
+          属于某个具体的东西  →  变成那个对象的实例字段
+          属于整个程序        →  也应该有一个对象来持有它，
+                                  并且只通过方法访问
+
+      把 TbGlobal 的这些字段改成实例字段，然后把 TbGlobal 变成
+      一个正常的对象。
+
+    ▸ 但要注意
+      常量（static final）不在此列，那是正常且推荐的。
+      真正需要全局唯一的资源（连接池、配置），可以用单例，
+      但要把访问收敛到方法里，而不是直接暴露字段。
+
+
+────────────────────────────────────────────────────────────
+  [严重] 检查项 4 · static 是否被滥用
+        违反标准：全局状态破坏封装
+        出处：Java 教科书通识
+────────────────────────────────────────────────────────────
+
+  DbLoader  —  10 个 static 非 final 字段（全局变量）
+
+      DbLoader.java:8   class DbLoader
+          static PreparedStatement info_adder
+          static PreparedStatement info_changer
+          public static int t_main
+          public static int t_temp
+          public static int saved
+          public static Vector<String> backups
+          public static int cnt_stu
+          public static int cnt_sub
+          public static int cnt_sco
+          static int top
+
+    ▸ 发生了什么
+      DbLoader 里有 10 个 static 且非 final 的字段：
+          static PreparedStatement info_adder
+          static PreparedStatement info_changer
+          public static int t_main
+          public static int t_temp
+          public static int saved
+          public static Vector<String> backups
+          public static int cnt_stu
+          public static int cnt_sub
+          public static int cnt_sco
+          static int top
+
+    ▸ 你在 C 里会怎么写
+      这就是 C 的全局变量。
+      你在 C 里写  int g_count;
+      在 Java 里写  static int count;
+      语义上是同一个东西 —— 一块所有代码都能读写的内存。
+
+    ▸ 为什么是问题
+      任何一处代码都能改它，出问题时你无法知道是谁在什么时候改
+      的。
+      调试这类 bug 只能靠通读全部代码。
+      如果程序有多线程，它还会直接导致数据竞争。
+
+    ▸ 试试
+      问自己一个问题：这个状态属于谁？
+
+          属于某个具体的东西  →  变成那个对象的实例字段
+          属于整个程序        →  也应该有一个对象来持有它，
+                                  并且只通过方法访问
+
+      把 DbLoader 的这些字段改成实例字段，然后把 DbLoader 变成
+      一个正常的对象。
+
+    ▸ 但要注意
+      常量（static final）不在此列，那是正常且推荐的。
+      真正需要全局唯一的资源（连接池、配置），可以用单例，
+      但要把访问收敛到方法里，而不是直接暴露字段。
+
+
+  … 检查项 4 另有 12 处，未展开
+
+────────────────────────────────────────────────────────────
+  [中等] 检查项 5 · 封装是否完整
+        违反标准：public 可变字段暴露内部表示
+        出处：Fowler《重构》坏味道 #5 关联
+────────────────────────────────────────────────────────────
+
+  Login  —  1 个 public 可变字段
+
+      Login.java:9   class Login
+          public boolean suc
+
+    ▸ 发生了什么
+      Login 有 1 个 public 且可变的字段：
+          public boolean suc
+
+    ▸ 你在 C 里会怎么写
+      C 的 struct 成员本来就是全公开的，你直接写 s.field = x 
+      就行，
+      语言也没提供别的选择。
+      你把这个习惯原样带到了 Java —— 只是把 struct 换成了 
+      class。
+
+    ▸ 为什么是问题
+      任何代码都能绕过 Login 的逻辑直接改它的字段。
+      这意味着：你想加一条规则（比如「数量不能是负数」）时，没
+      有地方可以加 ——
+      因为根本没有一个必经的入口。
+
+    ▸ 试试
+      先把这些字段改成 private，然后编译。
+      编译器报错的每一处，都是外部在直接操作 Login 的内部状
+      态。
+
+      对每一处报错问一句：
+          「这个操作，是不是本来就该由 Login 自己提供一个方法
+          来完成？」
+
+      多数情况下答案是「是」。这个过程会自动把行为拉回到数据所
+      在的地方 ——
+      顺便也就解决了检查项 1。
+
+    ▸ 但要注意
+      public final 字段是安全的，不在此列。
+      纯数据传输对象（DTO/VO）可以不封装，本工具已按命名惯例排
+      除。
+      另外，无脑给每个字段配一对 getter/setter 并不等于封装 —
+      —
+      那只是把 public 换了种写法。
+
+
+────────────────────────────────────────────────────────────
+  [中等] 检查项 5 · 封装是否完整
+        违反标准：public 可变字段暴露内部表示
+        出处：Fowler《重构》坏味道 #5 关联
+────────────────────────────────────────────────────────────
+
+  Tabbar  —  1 个 public 可变字段
+
+      Tabbar.java:7   class Tabbar
+          public DbTable jt
+
+    ▸ 发生了什么
+      Tabbar 有 1 个 public 且可变的字段：
+          public DbTable jt
+
+    ▸ 你在 C 里会怎么写
+      C 的 struct 成员本来就是全公开的，你直接写 s.field = x 
+      就行，
+      语言也没提供别的选择。
+      你把这个习惯原样带到了 Java —— 只是把 struct 换成了 
+      class。
+
+    ▸ 为什么是问题
+      任何代码都能绕过 Tabbar 的逻辑直接改它的字段。
+      这意味着：你想加一条规则（比如「数量不能是负数」）时，没
+      有地方可以加 ——
+      因为根本没有一个必经的入口。
+
+    ▸ 试试
+      先把这些字段改成 private，然后编译。
+      编译器报错的每一处，都是外部在直接操作 Tabbar 的内部状
+      态。
+
+      对每一处报错问一句：
+          「这个操作，是不是本来就该由 Tabbar 自己提供一个方法
+          来完成？」
+
+      多数情况下答案是「是」。这个过程会自动把行为拉回到数据所
+      在的地方 ——
+      顺便也就解决了检查项 1。
+
+    ▸ 但要注意
+      public final 字段是安全的，不在此列。
+      纯数据传输对象（DTO/VO）可以不封装，本工具已按命名惯例排
+      除。
+      另外，无脑给每个字段配一对 getter/setter 并不等于封装 —
+      —
+      那只是把 public 换了种写法。
+
+
+────────────────────────────────────────────────────────────
+  [中等] 检查项 5 · 封装是否完整
+        违反标准：public 可变字段暴露内部表示
+        出处：Fowler《重构》坏味道 #5 关联
+────────────────────────────────────────────────────────────
+
+  TbStu  —  1 个 public 可变字段
+
+      TbStu.java:10   class TbStu
+          public DbTable jt
+
+    ▸ 发生了什么
+      TbStu 有 1 个 public 且可变的字段：
+          public DbTable jt
+
+    ▸ 你在 C 里会怎么写
+      C 的 struct 成员本来就是全公开的，你直接写 s.field = x 
+      就行，
+      语言也没提供别的选择。
+      你把这个习惯原样带到了 Java —— 只是把 struct 换成了 
+      class。
+
+    ▸ 为什么是问题
+      任何代码都能绕过 TbStu 的逻辑直接改它的字段。
+      这意味着：你想加一条规则（比如「数量不能是负数」）时，没
+      有地方可以加 ——
+      因为根本没有一个必经的入口。
+
+    ▸ 试试
+      先把这些字段改成 private，然后编译。
+      编译器报错的每一处，都是外部在直接操作 TbStu 的内部状
+      态。
+
+      对每一处报错问一句：
+          「这个操作，是不是本来就该由 TbStu 自己提供一个方法
+          来完成？」
+
+      多数情况下答案是「是」。这个过程会自动把行为拉回到数据所
+      在的地方 ——
+      顺便也就解决了检查项 1。
+
+    ▸ 但要注意
+      public final 字段是安全的，不在此列。
+      纯数据传输对象（DTO/VO）可以不封装，本工具已按命名惯例排
+      除。
+      另外，无脑给每个字段配一对 getter/setter 并不等于封装 —
+      —
+      那只是把 public 换了种写法。
+
+
+════════════════════════════════════════════════════════════
+  说明
+  · 检查项 2、7 的判据本质依赖语义理解，只输出「待确认」，由你自己判断
+  · 检查项 1 的外部访问次数为启发式近似（未接入类型解析）
+════════════════════════════════════════════════════════════

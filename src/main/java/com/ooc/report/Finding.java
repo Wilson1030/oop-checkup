@@ -16,12 +16,18 @@ public final class Finding {
 
     public enum Severity {
         RED("严重"),
-        YELLOW("中等");
+        YELLOW("中等"),
+        /** 语义类判据的输出：不断言违反，交由学生自己判断 */
+        UNCONFIRMED("待确认");
 
         public final String label;
 
         Severity(String label) {
             this.label = label;
+        }
+
+        public boolean isViolation() {
+            return this != UNCONFIRMED;
         }
     }
 
