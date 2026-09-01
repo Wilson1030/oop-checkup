@@ -1,0 +1,76 @@
+name: build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: JDK ${{ matrix.java }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest ]
+        java: [ '17', '21' ]
+        include:
+          # One Windows run, because the launcher and console encoding
+          # behave differently there and that is where users actually are.
+          - os: windows-latest
+            java: '17'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: maven
+
+      - name: Build
+        run: mvn -B -ntp package
+
+      - name: Regression
+        shell: bash
+        run: bash scripts/regression.sh
+
+      - name: Sample report (English)
+        shell: bash
+        run: java -Dfile.encoding=UTF-8 -jar target/oop-checkup.jar examples/before --lang en --detail 1
+
+  determinism:
+    name: byte-identical across runs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - run: mvn -B -ntp package
+
+      # The core promise of this tool: detection is deterministic.
+      # Ten runs, one checksum.
+      - name: Ten runs must hash identically
+        run: |
+          for i in $(seq 1 10); do
+            java -Dfile.encoding=UTF-8 -jar target/oop-checkup.jar \
+              examples/before --detail 20 > "run$i.txt"
+          done
+          sha256sum run*.txt
+          count=$(sha256sum run*.txt | awk '{print $1}' | sort -u | wc -l)
+          if [ "$count" -ne 1 ]; then
+            echo "::error::output is not deterministic ($count distinct checksums)"
+            exit 1
+          fi
+          echo "All 10 runs identical."

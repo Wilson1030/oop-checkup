@@ -1,5 +1,8 @@
 # oop-checkup
 
+[![build](https://github.com/<your-name>/oop-checkup/actions/workflows/build.yml/badge.svg)](https://github.com/<your-name>/oop-checkup/actions/workflows/build.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 **An OO transition checklist for Java learners coming from C.**
 
 [简体中文](README.zh-CN.md)
