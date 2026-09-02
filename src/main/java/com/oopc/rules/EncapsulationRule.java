@@ -10,16 +10,17 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 检查项 5 · 封装是否完整
- * 标准：public 可变字段暴露内部表示
+ * Item 5 - encapsulation intact
+ * Standard: public mutable fields expose internals
  *
- * 判据（PREREGISTRATION-v3.md）：
- *   A  存在 public 非 final 非 static 实例字段
- *   排除  DTO / VO / PO / Entity 等命名与注解（沿用检查项 1 的排除集）
- *   严重  同一类中 >= 3 个
+ * Criteria (PREREGISTRATION-v3.md):
+ *   A  public, non-final, non-static instance field
+ *   Exclude  DTO / VO / PO / Entity naming and annotations (reuse item 1's exclusions)
+ *   MAJOR  >= 3 in the same class
  *
- * 正当性：public 可变字段直接暴露内部表示，是封装破损的教科书定义。
- * 这是全部七项中最硬的一条 —— 成熟库中不应存在。
+ * Justification: a public mutable field directly exposes internal representation; the
+ * textbook definition of broken encapsulation. The hardest of all seven items -- it
+ * should not exist in a mature library.
  */
 public final class EncapsulationRule implements Rule {
 

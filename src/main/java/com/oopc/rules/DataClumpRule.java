@@ -10,27 +10,29 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 检查项 2 · 是否避免散装参数传递
- * 标准：Data Clump / Long Parameter List（Fowler《重构》坏味道 #3 #4）
+ * Item 2 - loose parameters avoided
+ * Standard: Data Clump / Long Parameter List (Fowler, Refactoring - smells #3 #4)
  *
- * 判据（v2，全部条件须同时满足，见 PREREGISTRATION-v2.md）：
- *   C1 长度 >= 2 的连续参数子序列，类型与名称均一致
- *   C2 出现在 >= 2 个不同的类中      <- v2 新增
- *   C3 涉及 >= 2 个不同的方法名      <- v2 新增
- *   C4 出现次数 >= 2
- *   C5 非全部单字母参数名
+ * Criteria (v2; all must hold, see PREREGISTRATION-v2.md):
+ *   C1 length >= 2 contiguous parameter subsequence, type and name both match
+ *   C2 occurs in >= 2 different classes        <- new in v2
+ *   C3 involves >= 2 different method names    <- new in v2
+ *   C4 occurs >= 2 times
+ *   C5 not all single-letter parameter names
  *
- * C2 / C3 的正当性独立于样本：参数团的危害在于「同一组数据被拆散后，
- * 跨越多个不相关的地方传递」。同一个类内部的辅助方法链共享上下文，
- * 以及同名方法的重载家族，都不具备这个特征 —— 它们是正常甚至优秀的设计。
+ * C2 / C3 are justifiable independently of any sample: a data clump's harm is
+ * "the same data being split apart and passed across unrelated places". Helper
+ * chains within one class sharing context, and overload families sharing a method
+ * name, do not have that property -- they are normal or even good design.
  *
- * RUN-002 证明：本规则的判据本质上是**语义性**的 ——
- * 真正的判据是「这组参数能否命名一个有意义的概念」，
- * 而这无法从语法结构推导（同样的语法形态，语义上可能是也可能不是）。
+ * RUN-002 proved this rule's judgement is essentially **semantic**: the real
+ * criterion is "can this parameter group be named as one meaningful concept",
+ * which cannot be derived from syntax (the same syntax can be either).
  *
- * 因此本规则不断言「违反」，只输出「待确认」，把判断权交还学生。
- * 这不是逃避 —— 教学上反而更好：起名这个动作本身就是在逼学生判断
- * 「这几个东西是不是同一个概念」，那正是我们希望他学会的思考。
+ * So this rule does not assert a violation; it only reports UNCONFIRMED, handing
+ * the decision back to the student. That is not evasion -- pedagogically it is
+ * better: the act of naming is itself forcing the student to decide whether these
+ * things are one concept, which is object-oriented design.
  */
 public final class DataClumpRule implements Rule {
 
@@ -103,7 +105,7 @@ public final class DataClumpRule implements Rule {
             return b.getValue().size() - a.getValue().size();
         });
 
-        // 短参数团若其出现位置被更长的参数团完全覆盖，则为冗余
+        // A shorter clump whose locations are fully covered by a longer one is redundant.
         List<Map.Entry<String, LinkedHashMap<String, Occ>>> accepted = new ArrayList<>();
         for (Map.Entry<String, LinkedHashMap<String, Occ>> c : candidates) {
             boolean subsumed = accepted.stream()

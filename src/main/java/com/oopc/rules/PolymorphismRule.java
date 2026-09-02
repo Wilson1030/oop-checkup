@@ -10,18 +10,19 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 检查项 3 · 是否用多态替代类型判断
- * 标准：Switch Statements（Fowler《重构》坏味道 #11）
+ * Item 3 - polymorphism instead of type checks
+ * Standard: Switch Statements (Fowler, Refactoring - smell #11)
  *
- * 判据（PREREGISTRATION-v3.md）：
- *   A  同一 if-else 链中出现 >= 2 个 instanceof            -> 中等
- *   B  同一组 case 标签集合在 >= 2 处 switch 中重复出现     -> 严重
- *   C  同一组 instanceof 类型集合在 >= 2 个方法中重复出现   -> 严重
- *   排除  equals() 内的 instanceof（Java 规范要求的标准写法，在解析层已排除）
+ * Criteria (PREREGISTRATION-v3.md):
+ *   A  >= 2 instanceof in one if-else chain              -> MINOR
+ *   B  the same set of case labels repeated in >= 2 switches  -> MAJOR
+ *   C  the same set of instanceof types repeated in >= 2 methods -> MAJOR
+ *   Exclude  instanceof inside equals() (canonical idiom; already excluded at parse)
  *
- * 正当性：Fowler 对该坏味道的核心论述是「基于类型码的条件分派，新增类型时
- * 必须修改所有分派点」。单处分派可能是合理的（菜单、状态机），
- * 故 switch 只在重复出现时才判为违反。
+ * Justification: Fowler's core point is "type-code based dispatch means you
+ * must modify every dispatch point when adding a type". A single dispatch may
+ * be legitimate (a menu, a state machine), so a switch is only flagged when
+ * it is repeated.
  */
 public final class PolymorphismRule implements Rule {
 
@@ -32,9 +33,9 @@ public final class PolymorphismRule implements Rule {
 
     @Override
     public List<Finding> apply(Ir.Project project, ScaleProfile scale, Lang lang) {
-        // M1（v5）：多态只能用于「你能修改的类型」。
-        // 对 String / Collection / boolean[] 做 instanceof 是无法避免的 ——
-        // 你没法给它们添加方法，指出这类分派没有任何可行动性。
+        // M1 (v5): polymorphism only applies to types you can modify.
+        // instanceof on String / Collection / boolean[] is unavoidable -- you
+        // cannot add methods to them, so flagging it offers no actionable step.
         Set<String> projectTypes = project.classes.stream()
                 .map(k -> k.name).collect(Collectors.toSet());
 
@@ -52,10 +53,11 @@ public final class PolymorphismRule implements Rule {
                 if (kept.size() < 2) continue;
                 sig = String.join(",", kept);
             } else {
-                // N1（v6）：switch 仅在标签为具名标识符时检测。
-                // 一个「类型」必须有名字才能表达概念：case ById: 值得建一个类；
-                // case "1": 里的 "1" 不代表任何领域概念 —— 它是序号（菜单项、索引）。
-                // 对没有名字的数字做多态改造是不可能的，因为造不出对应的类。
+                // N1 (v6): detect a switch only when its labels are named identifiers.
+                // A "type" must have a name to express a concept: case ById: deserves
+                // a class; the "1" in case "1": carries no domain concept -- it is an
+                // ordinal (menu item, index). Polymorphic refactoring of a nameless
+                // number is impossible, because there is no class to create.
                 if (tc.rawTypes.stream().allMatch(this::isNumericLabel)) continue;
                 kept = Collections.emptyList();
                 sig = tc.signature;
@@ -73,7 +75,7 @@ public final class PolymorphismRule implements Rule {
             boolean repeated = group.size() >= 2;
             boolean isSwitch = first.kind == Ir.TypeCheck.Kind.SWITCH;
 
-            // switch 单处不报：可能是菜单或状态机，属合理用法
+            // A single switch is not reported: it may be a menu or state machine, which is legitimate.
             if (isSwitch && !repeated) continue;
 
             List<String> types = filteredTypes.get(e.getKey());
@@ -116,13 +118,13 @@ public final class PolymorphismRule implements Rule {
         return findings;
     }
 
-    /** 去掉泛型参数，取基础类型名 */
+    /** Strips generic bounds, returns the base type name. */
     private String baseName(String type) {
         int i = type.indexOf('<');
         return i < 0 ? type : type.substring(0, i);
     }
 
-    /** case 标签是否为纯数字字面量或纯数字字符串 */
+    /** Whether the case label is a pure numeric literal or a numeric string. */
     private boolean isNumericLabel(String label) {
         String s = label.trim();
         if (s.length() >= 2

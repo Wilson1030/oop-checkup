@@ -10,20 +10,23 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 检查项 1 · 数据与行为是否结合
- * 标准：Anemic Domain Model（Martin Fowler, 2003）
+ * Item 1 - data and behaviour kept together
+ * Standard: Anemic Domain Model (Martin Fowler, 2003)
  *
- * 一个类只有字段和 getter/setter、没有任何行为，而操作这些字段的逻辑
- * 全部散落在别的类里 —— 这就是把类当成 C 的 struct、把 Service 当成
- * 一组 C 函数。数据与行为分离，是过程式思维最本质的残留。
+ * A class with fields and getters/setters but no behaviour, while the logic that
+ * operates on those fields lives scattered in other classes -- this is treating
+ * a class as a C struct and a service class as a set of C functions. The
+ * separation of data and behaviour is the most fundamental leftover of
+ * procedural thinking.
  *
- * v2 新增两条排除（属修正客观错误，非放宽阈值）：
- *   E1 @interface 注解声明 —— 注解不是类，没有行为是其语言定义。
- *      RUN-001 中 JUnit5 的 TempDir / RepeatedTest / Timeout 三项误报皆属此。
- *   E2 非 public 的 static 嵌套类 —— 内部数据节点贫血是刻意设计。
- *      RUN-001 中 Guava 的 MoreObjects.ValueHolder 属此。
- *      （v2 误写为 private static，实际该类是包私有 static class；
- *        已在 RUN-002 分析中留痕，v3 修正）
+ * Two exclusions added in v2 (correcting objective errors, not relaxing thresholds):
+ *   E1 @interface annotation declaration -- an annotation is not a class; having
+ *      no behaviour is its language definition. RUN-001's three JUnit5 false
+ *      positives (TempDir / RepeatedTest / Timeout) were all of this kind.
+ *   E2 non-public static nested class -- internal data nodes are deliberately anemic.
+ *      RUN-001's Guava MoreObjects.ValueHolder is of this kind.
+ *      (v2 said "private static", but that class is actually package-private; this
+ *       was recorded in the RUN-002 analysis and corrected in v3)
  */
 public final class AnemicModelRule implements Rule {
 

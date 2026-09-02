@@ -5,17 +5,17 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 统一中间表示（IR）。
+ * Unified intermediate representation (IR).
  *
- * 规则引擎只认这里的模型，完全不知道底层用的是哪个解析器。
- * 将来若要更换解析器（JavaParser -> javac API -> 其他），
- * 只需重写 parse 层，本文件与所有规则一行都不用动。
+ * The rule engine only knows this model; it has no idea which parser produced it.
+ * To later swap parsers (JavaParser -> javac API -> other), only the parse layer
+ * needs rewriting; this file and every rule stay untouched.
  */
 public final class Ir {
 
     private Ir() {}
 
-    /** 方法参数 */
+    /** A method parameter. */
     public static final class Param {
         public final String type;
         public final String name;
@@ -25,7 +25,7 @@ public final class Ir {
             this.name = name;
         }
 
-        /** 用于参数团比对的键：类型和名称都必须一致 */
+        /** Key used for data-clump matching: both type and name must match. */
         public String key() {
             return type + " " + name;
         }
@@ -36,7 +36,7 @@ public final class Ir {
         }
     }
 
-    /** 字段 */
+    /** A field. */
     public static final class Field {
         public final String name;
         public final String type;
@@ -53,7 +53,7 @@ public final class Ir {
         }
     }
 
-    /** 方法或构造器 */
+    /** A method or constructor. */
     public static final class Method {
         public final String name;
         public final List<Param> params;
@@ -83,7 +83,7 @@ public final class Ir {
         }
     }
 
-    /** 类型声明（class / interface / enum / record） */
+    /** A type declaration (class / interface / enum / record). */
     public static final class Klass {
         public final String name;
         public final String qualifiedName;
@@ -93,7 +93,7 @@ public final class Ir {
         public final boolean isInterface;
         public final boolean isAbstract;
         public final boolean isRecord;
-        /** @interface 注解声明 —— 不是类，没有行为是其语言定义 */
+        /** @interface annotation declaration - not a class; having no behaviour is its language definition */
         public final boolean isAnnotation;
         public final boolean isPrivate;
         public final boolean isPublic;
@@ -130,11 +130,12 @@ public final class Ir {
     }
 
     /**
-     * 一次带接收者的成员访问，形如 obj.foo() 或 obj.bar。
+     * A member access with a receiver, e.g. obj.foo() or obj.bar.
      *
-     * 注意：阶段0没有类型解析（Symbol Solver），无法确定 obj 的真实类型。
-     * 因此这是一个「启发式近似」：仅按成员名称匹配。
-     * 同名字段分属不同类时会产生误差，报告中必须标注这一点。
+     * Note: stage 0 has no type resolution (Symbol Solver), so obj's real type
+     * cannot be determined. This is therefore a heuristic approximation: it
+     * matches on member name only. Identically named fields in different classes
+     * cause error; the report must call that out.
      */
     public static final class Access {
         public final String fromClass;
@@ -149,17 +150,18 @@ public final class Ir {
     }
 
     /**
-     * 一处基于类型的条件分派（instanceof 链 或 switch）。
+     * A type-based conditional dispatch (instanceof chain or switch).
      *
-     * signature 是排序后的类型/标签集合，用于检测「同一组类型判断在多处重复」
-     * —— 重复才是 Fowler 所说的真正痛点：新增一个类型要同时改多处。
+     * signature is the sorted set of types/labels, used to detect "the same type
+     * dispatch repeated in several places" - repetition is the real pain point
+     * Fowler names: adding a type requires editing several places at once.
      */
     public static final class TypeCheck {
         public enum Kind { INSTANCEOF_CHAIN, SWITCH }
 
         public final Kind kind;
         public final String signature;
-        /** instanceof 链中出现的原始类型名（switch 为空），供规则层过滤 */
+        /** Raw type names in an instanceof chain (empty for switch), for the rule layer to filter. */
         public final List<String> rawTypes;
         public final int branches;
         public final int line;
@@ -183,7 +185,7 @@ public final class Ir {
         }
     }
 
-    /** 整个被分析项目 */
+    /** The whole analysed project. */
     public static final class Project {
         public final List<Klass> classes = new ArrayList<>();
         public final List<Access> accesses = new ArrayList<>();

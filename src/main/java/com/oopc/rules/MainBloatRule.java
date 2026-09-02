@@ -10,17 +10,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 检查项 6 · 入口方法是否过度承担
- * 标准：Long Method 的特化（Fowler《重构》坏味道 #6）
+ * Item 6 - entry point not overloaded
+ * Standard: Long Method (main-specific) (Fowler, Refactoring - smell #6)
  *
- * 判据（PREREGISTRATION-v3.md）：
- *   A  main 方法体 > 50 行 -> 中等；> 100 行 -> 严重
+ * Criteria (PREREGISTRATION-v3.md):
+ *   A  main body > 50 lines -> MINOR; > 100 lines -> MAJOR
  *
- * 为什么单独把 main 拎出来，而不是做通用的「方法过长」：
- *   方法过长是通用代码质量问题，与「C 思维残留」只有间接关系，
- *   且在成熟库中普遍存在，必然造成误报。
- *   而「把全部逻辑写在 main 里」是「用 Java 写 C 程序」最直白的形态，
- *   既贴题，又因为库代码没有 main 而天然不会误报。
+ * Why main is singled out instead of a generic "method too long":
+ *   A long method is a generic code-quality issue, only indirectly related to
+ *   "residual C thinking", and it is common in mature libraries, so it would
+ *   inevitably cause false positives.
+ *   "All logic in main" is the most direct shape of writing C in Java: it is on
+ *   point, and because library code has no main, it never falsely fires.
  */
 public final class MainBloatRule implements Rule {
 

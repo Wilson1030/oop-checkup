@@ -30,9 +30,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * 解析层：JavaParser -> 统一 IR。
+ * Parse layer: JavaParser -> unified IR.
  *
- * 这是唯一与具体解析器耦合的文件。更换解析器只需重写本类。
+ * This is the only file coupled to a concrete parser. Swapping parsers just means
+ * rewriting this class.
  */
 public final class JavaFrontend {
 
@@ -90,11 +91,11 @@ public final class JavaFrontend {
         String s = p.toString().replace('\\', '/').toLowerCase();
         if (s.contains("/module-info.java") || s.endsWith("package-info.java")) return false;
         if (includeTests) return true;
-        // 测试代码的写法惯例与业务代码不同，默认排除
+        // Test code follows different conventions from production code; exclude by default.
         return !(s.contains("/test/") || s.contains("/tests/") || s.contains("/src/test/"));
     }
 
-    /** 有效行 = 非空行，且不是纯注释行 */
+    /** Effective lines = non-blank lines, excluding pure comment lines. */
     private int countEffectiveLines(String src) {
         int n = 0;
         for (String raw : src.split("\r?\n")) {
@@ -140,7 +141,7 @@ public final class JavaFrontend {
                     isAnnotation, isPrivate, isPublic, isNested, isStatic,
                     anns);
 
-            // 只取直接成员，避免嵌套类被重复统计
+            // Only take direct members so nested classes are not double-counted.
             for (BodyDeclaration<?> member : td.getMembers()) {
                 if (member instanceof FieldDeclaration) {
                     FieldDeclaration fd = (FieldDeclaration) member;
@@ -186,7 +187,7 @@ public final class JavaFrontend {
         return out;
     }
 
-    /** 收集带显式接收者的成员访问（obj.foo() / obj.bar），排除 this. 与 super. */
+    /** Collect member accesses with an explicit receiver (obj.foo() / obj.bar), excluding this. and super. */
     private void scanAccesses(BlockStmt body, String fromClass, Ir.Project project) {
         for (MethodCallExpr call : body.findAll(MethodCallExpr.class)) {
             if (hasExternalScope(call.getScope().orElse(null))) {
@@ -201,8 +202,9 @@ public final class JavaFrontend {
     }
 
     /**
-     * 采集基于类型的条件分派。
-     * 排除 equals() 内的 instanceof —— 那是 Java 规范要求的标准写法。
+     * Collect type-based conditional dispatch.
+     * Excludes instanceof inside equals() -- that is the canonical idiom the
+     * Java spec itself requires.
      */
     private void scanTypeChecks(BlockStmt body, String methodName, Ir.Klass k,
                                 String file, Ir.Project project) {
