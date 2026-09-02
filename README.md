@@ -14,6 +14,20 @@ pass, and the grader only looks at output.
 This tool fills that feedback vacuum. It doesn't rewrite your code. It tells you
 where you are still writing C in Java, and why that matters.
 
+**What it catches** — six of the most common ways a C programmer writes Java:
+
+- **Anemic domain model**: a class with fields but no behaviour, all the logic in a service class
+- **Data clumps**: the same parameters passed through a dozen methods
+- **`if`/`switch` instead of polymorphism**: type checks that spread as types grow
+- **Global mutable state**: `static` non-final fields that act like C globals
+- **Broken encapsulation**: `public` mutable fields
+- **Overloaded `main`**: a 200-line entry point instead of objects
+
+Every finding cites a recognised source (Fowler's _Refactoring_, the Anemic Domain
+Model essay, standard Java teaching material), so it's traceable, not opinion.
+
+Free, MIT-licensed, offline, deterministic — no LLM required.
+
 ---
 
 ## See it in 30 seconds
