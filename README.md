@@ -1,6 +1,6 @@
 # oop-checkup
 
-[![build](https://github.com/<your-name>/oop-checkup/actions/workflows/build.yml/badge.svg)](https://github.com/<your-name>/oop-checkup/actions/workflows/build.yml)
+[![build](https://github.com/Wilson1030/oop-checkup/actions/workflows/build.yml/badge.svg)](https://github.com/Wilson1030/oop-checkup/actions/workflows/build.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **An OO transition checklist for Java learners coming from C.**
@@ -33,7 +33,7 @@ Both versions compile and run. Diff them yourself — that is the whole lesson.
 Requires JDK 17+ (Maven only needed to build).
 
 ```bash
-git clone https://github.com/<your-name>/oop-checkup.git
+git clone https://github.com/Wilson1030/oop-checkup.git
 cd oop-checkup
 mvn package
 

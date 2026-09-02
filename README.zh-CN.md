@@ -1,6 +1,6 @@
 # oop-checkup
 
-[![build](https://github.com/<your-name>/oop-checkup/actions/workflows/build.yml/badge.svg)](https://github.com/<your-name>/oop-checkup/actions/workflows/build.yml)
+[![build](https://github.com/Wilson1030/oop-checkup/actions/workflows/build.yml/badge.svg)](https://github.com/Wilson1030/oop-checkup/actions/workflows/build.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **给从 C 转向 Java 的学习者做的「面向对象转换检查表」。**
@@ -31,7 +31,7 @@
 需要 JDK 17+（构建才需要 Maven）。
 
 ```bash
-git clone https://github.com/<your-name>/oop-checkup.git
+git clone https://github.com/Wilson1030/oop-checkup.git
 cd oop-checkup
 mvn package
 ```
