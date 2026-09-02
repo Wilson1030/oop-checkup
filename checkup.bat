@@ -33,8 +33,8 @@ if "%~1"=="" (
     echo.
     echo   Examples:
     echo     checkup examples\before
-    echo     checkup "D:\homework" --detail 20
-    echo     checkup "D:\homework" --detail 20 ^> report.txt
+    echo     checkup "<project-path>" --detail 20
+    echo     checkup "<project-path>" --detail 20 ^> report.txt
     echo.
     exit /b 0
 )
